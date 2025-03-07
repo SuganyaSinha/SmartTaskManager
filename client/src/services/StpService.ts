@@ -42,18 +42,18 @@ export const getUserInformation = async (getAccessTokenSilently: { (options: Get
   }
 };
 
-export const postUserInput = async (input) : Promise<Schedule>=> {
+export const postUserInput = async (input: string, getAccessTokenSilently: { (options: GetTokenSilentlyOptions & { detailedResponse: true; }): Promise<GetTokenSilentlyVerboseResponse>; (options?: GetTokenSilentlyOptions): Promise<string>; (options: GetTokenSilentlyOptions): Promise<GetTokenSilentlyVerboseResponse | string>; }) : Promise<Schedule>=> {
   try {
      
-    //const { getAccessTokenSilently } = useAuth0();
-    //const token = await getAccessTokenSilently();
+    const token = await getAccessTokenSilently();
+    console.log(token);
       const response = await api.post(
         '/api/openai/ask',
         JSON.stringify(input),
         {
             headers: {
                 'Content-Type': 'application/json', // Set the Content-Type header
-                 //Authorization: `Bearer ${token}`
+                 Authorization: `Bearer ${token}`
             },
         }
         );

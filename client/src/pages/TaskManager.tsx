@@ -21,7 +21,7 @@ const TaskManager: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try{
-        const response = await postUserInput(input);
+        const response = await postUserInput(input, getAccessTokenSilently);
         const test = response;
         setSchedule(response);
     }
@@ -69,7 +69,7 @@ const TaskManager: React.FC = () => {
             />
         </div>
         <div>
-            <button onClick={handleGet} disabled={isLoading}>
+            <button onClick={handleSubmit} disabled={isLoading}>
                 {isLoading ? 'Loading...' : 'Generate Schedule'}
             </button>
         </div>

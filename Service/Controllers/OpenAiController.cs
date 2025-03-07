@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -14,6 +15,7 @@ public class OpenAiController : ControllerBase
         _openAiService = openAiService;
     }
 
+    [Authorize]
     [HttpPost("ask")]
     public async Task<IActionResult> AskOpenAi([FromBody] string request)
     {
