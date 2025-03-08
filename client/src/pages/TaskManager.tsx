@@ -12,10 +12,16 @@ const TaskManager: React.FC = () => {
     
   const [input, setInput] = useState("");
   const [schedule, setSchedule] = useState<Schedule | null>(null);
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { getAccessTokenSilently } = useAuth0();
+
+  const addPromptToHistory = (newPrompt: string) => {
+    setPromptHistory((prevHistory) => [...prevHistory, newPrompt]);
+    setInput('');
+  };
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -24,6 +30,7 @@ const TaskManager: React.FC = () => {
         const response = await postUserInput(input, getAccessTokenSilently);
         const test = response;
         setSchedule(response);
+        addPromptToHistory(input);
     }
     catch(err)
     {
@@ -58,7 +65,80 @@ const TaskManager: React.FC = () => {
 
   return (
     <div>
+       <div className="flex h-screen">
+          {/* Left Panel Start*/}
+          <div className="w-1/3 flex flex-col border-r p-4">
+          {/* History Panel Start*/}
+          {promptHistory.length > 0 && (
+            
+            <div className="flex-1 overflow-y-auto border-b p-2 h-44">
+            <div className="space-y-2">
+            {promptHistory.map((item, index) => (
+              <div key={index} className="p-2 bg-gray-100 rounded">
+                {item}
+              </div>
+            ))}
+          </div>
+            </div> 
+          )}
+          {/*history panel end*/}
+            {/* Input Panel start*/}
+            <div className="p-2 mt-4">
+            <textarea
+            className="w-full p-2 border rounded"
+            rows={3}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Enter your tasks here..."
+          />
+          <button onClick={handleSubmit} disabled={isLoading} className="w-full mt-2 p-2 bg-blue-500 text-white rounded">
+          {isLoading ? 'Loading...' : 'Generate Schedule'}
+          </button>
+
+            </div> {/*Input panel end*/}
+            <div>
+              {error && <div style={{ color: 'red' }}>{error}</div>}
+            </div>
+          </div> {/*left panel end*/}
+          {/* Right Panel start*/}
+          <div className="w-2/3 p-4">
+            {/*Task panel end*/}
+            <div className="space-y-2">
+            {schedule && (
+        <div>
+        {schedule.timeframe === 'week' ? (
+            <CalendarView days={schedule.days} onDayClick={setSelectedDay} />
+        ) : (
+            <DayView day={Object.values(schedule.days)[0]} />
+        )}
+        {selectedDay && (
+            <div>
+                <h2>Tasks for {selectedDay}</h2>
+                <DayView day={schedule.days[selectedDay]} />
+            </div>
+        )}
+        </div>
+
+      )}
+
+            </div> {/*task panel end*/}
+          </div> {/*right panel end*/}
+       </div> {/*main div end*/}
+       {/* 
         <h1>Schedule Planner</h1>
+        <div className="history">
+          {promptHistory.length > 0 && (
+                        <ul>
+                        {promptHistory.map((item, index) => (
+                                                  <div key={index} className="mb-3">
+                                                  <p className="text-blue-600 font-semibold">{item}</p>
+                                                  <hr className="my-2" />
+                                              </div>
+                          //<li key={index}>{item}</li>
+                        ))}
+                      </ul>
+          )}
+        </div>
         <div>
             <textarea
                 value={input}
@@ -73,10 +153,11 @@ const TaskManager: React.FC = () => {
                 {isLoading ? 'Loading...' : 'Generate Schedule'}
             </button>
         </div>
+        */}
 
-        {error && <div style={{ color: 'red' }}>{error}</div>}
+        
 
-      {schedule && (
+      {/*schedule && (
         <div>
         <h1>Schedule View</h1>
         {schedule.timeframe === 'week' ? (
@@ -92,144 +173,9 @@ const TaskManager: React.FC = () => {
         )}
         </div>
 
-      )}
+      )*/}
       </div>
   )
 };
 
 export default TaskManager;
-
-/*
-
-      {result && tasks && (
-        <div className="mt-4">
-          <h2 className="text-xl font-bold">Task Plan</h2>
-          {result.timeframe === "week" ? (
-            <Calendar selectedDay={selectedDay} onSelect={setSelectedDay} />
-          ) : (
-            <TaskList tasks={result.tasks} />
-          )}
-          {selectedDay && tasks.days && (
-            <TaskList tasks={tasks.days[selectedDay]?.tasks || []} />
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const TaskList = ({ tasks }) => (
-  <Card className="mt-4 p-2">
-    <CardContent>
-      <ul>
-        {tasks.map((task, index) => (
-          <li key={index} className="border-b py-2">
-            {task.name} - {task.time_in_hours} hrs
-          </li>
-        ))}
-      </ul>
-    </CardContent>
-  </Card>
-);
-
-
-
-/*
-const TaskList: React.FC = () => {
-  const [tasks, setTasks] = useState<string>("initial");
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const data = await getApiTest();
-        setTasks(data);
-      } catch (err) {
-        setError('Failed to fetch posts');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTasks();
-  }, []);
-
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>{error}</p>;
-
-  return (
-
-<p>{tasks}</p>
-//<p>this is just test</p>
-
-  );
-};
-
-export default TaskList;
-
-
-const TaskList: React.FC = () => {
-  const [input, setInput] = useState("");
-  const [response, setResponse] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setInput(event.target.value);
-  };
-
-  const callOpenAI = async () => {
-    if (!input.trim()) return;
-    setLoading(true);
-
-    try {
-      const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [{ role: "user", content: input }],
-        }),
-      });
-
-      const data = await res.json();
-      setResponse(data.choices?.[0]?.message?.content || "No response received");
-    } catch (error) {
-      console.error("Error calling OpenAI:", error);
-      setResponse("Failed to fetch response.");
-    }
-
-    setLoading(false);
-  };
-
-  return (
-    <div className="p-4 max-w-md mx-auto">
-      <h2 className="text-xl font-bold mb-2">Task Manager</h2>
-      <input
-        type="text"
-        value={input}
-        onChange={handleInputChange}
-        placeholder="Enter your tasks here"
-        className="border rounded p-2 w-full"
-      />
-      <button
-        onClick={callOpenAI}
-        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-        disabled={loading}
-      >
-        {loading ? "Processing..." : "Submit"}
-      </button>
-      {response && (
-        <div className="mt-4 p-2 bg-gray-100 rounded">
-          <strong>Response:</strong> {response}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default TaskList;
-*/

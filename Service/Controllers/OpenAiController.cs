@@ -1,18 +1,24 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SmartTaskManager.Services;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using SmartTaskManager.Models;
+using SmartTaskManager.Interfaces;
 
 [ApiController]
 [Route("api/openai")]
 public class OpenAiController : ControllerBase
 {
     private readonly OpenAiService _openAiService;
+    private readonly IPromptService _promptService;
 
-    public OpenAiController(OpenAiService openAiService)
+    public OpenAiController( OpenAiService openAiService,
+                            IPromptService promptService )
     {
         _openAiService = openAiService;
+        _promptService = promptService;
     }
 
     [Authorize]
@@ -23,9 +29,16 @@ public class OpenAiController : ControllerBase
         {
             return BadRequest("Prompt cannot be empty.");
         }
-
         //var response = await _openAiService.GetResponseAsync(AppendToThePrompt(request.Prompt));
         var response = await _openAiService.GetResponseAsync(request);
+
+        var sub = User.FindFirst("sub")?.Value;
+        if(sub != null)
+        {
+            var prompt = new Prompt{UserId = sub, Text = request, Response = response};
+            await _promptService.CreatePromptAsync(prompt);
+        }
+
         return Ok(new { response });
     }
 

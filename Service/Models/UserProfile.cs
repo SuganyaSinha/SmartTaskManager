@@ -21,9 +21,6 @@ public class UserProfile
     [BsonElement("preferences")]
     public Preferences Preferences { get; set; } = new();
 
-    [BsonElement("prompts")]
-    public List<UserPrompt> Prompts { get; set; } = new();
-
     [BsonElement("lastUpdated")]
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 }

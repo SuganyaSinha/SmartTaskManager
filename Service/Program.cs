@@ -36,11 +36,13 @@ builder.Services.AddSingleton<MongoDbContext>();
 
 // Register Repositaries
 builder.Services.AddScoped<ITaskRepository, TaskRepositary>();
+builder.Services.AddScoped<IPromptRepositary, PromptRepositary>();
 builder.Services.AddScoped<IUserProfileRepositary, UserProfileRepositary>();
 
 // Register Services
 builder.Services.AddSingleton<OpenAiService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IPromptService, PromptService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
 builder.Services.AddControllers();

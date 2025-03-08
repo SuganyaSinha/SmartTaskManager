@@ -16,6 +16,8 @@ namespace SmartTaskManager.Data
         public IMongoCollection<TaskItem> TaskCollection => _database.GetCollection<TaskItem>("Task");
 
         public IMongoCollection<UserProfile> UserProfiles => _database.GetCollection<UserProfile>("UserProfiles");
+
+        public IMongoCollection<Prompt> Prompt => _database.GetCollection<Prompt>("Prompts");
     }
 
 }
