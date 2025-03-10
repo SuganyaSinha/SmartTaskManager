@@ -19,6 +19,16 @@
     priority: "high" | "medium" | "low";
 }
 
+export type TaskPriority = "high" | "medium" | "low";
+
+export interface NewTask {
+  title: string;
+  start: Date; // ISO 8601 date string, parsed into Date in code
+  end: Date;   // ISO 8601 date string, parsed into Date in code
+  priority: string;
+  comments: string;
+}
+
 export interface Day {
     overloaded: boolean;
     tasks: Task[];

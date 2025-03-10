@@ -8,6 +8,7 @@ import TaskManager from './pages/TaskManager';
 import { Auth0Provider } from "@auth0/auth0-react";
 
 import AuthButtons from './pages/AuthButton';
+import TaskScheduler from './pages/TaskScheduler';
 
 
 function Navigation() {
@@ -35,6 +36,7 @@ function App() {
     </Routes>
   </Router>
   */
+ /*
   <Auth0Provider
   domain={process.env.REACT_APP_DOMAIN!}
   clientId={process.env.REACT_APP_CLIENT_ID!}
@@ -47,6 +49,8 @@ function App() {
   <AuthButtons></AuthButtons>
 
 </Auth0Provider>
+*/
+<TaskScheduler></TaskScheduler>
   );
 }
 
