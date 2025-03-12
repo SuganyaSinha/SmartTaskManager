@@ -1,5 +1,5 @@
 import axios from "axios";
-import {Schedule } from '../types/common';
+import {NewTask, Schedule } from '../types/common';
 import { GetTokenSilentlyOptions } from "@auth0/auth0-react";
 import { GetTokenSilentlyVerboseResponse } from "@auth0/auth0-spa-js";
 
@@ -42,7 +42,7 @@ export const getUserInformation = async (getAccessTokenSilently: { (options: Get
   }
 };
 
-export const postUserInput = async (input: string, getAccessTokenSilently: { (options: GetTokenSilentlyOptions & { detailedResponse: true; }): Promise<GetTokenSilentlyVerboseResponse>; (options?: GetTokenSilentlyOptions): Promise<string>; (options: GetTokenSilentlyOptions): Promise<GetTokenSilentlyVerboseResponse | string>; }) : Promise<Schedule>=> {
+export const postUserInput = async (input: string, getAccessTokenSilently: { (options: GetTokenSilentlyOptions & { detailedResponse: true; }): Promise<GetTokenSilentlyVerboseResponse>; (options?: GetTokenSilentlyOptions): Promise<string>; (options: GetTokenSilentlyOptions): Promise<GetTokenSilentlyVerboseResponse | string>; }) : Promise<NewTask[]>=> {
   try {
      
     const token = await getAccessTokenSilently();

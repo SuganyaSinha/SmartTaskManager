@@ -21,7 +21,7 @@ public class OpenAiController : ControllerBase
         _promptService = promptService;
     }
 
-    [Authorize]
+    //[Authorize]
     [HttpPost("ask")]
     public async Task<IActionResult> AskOpenAi([FromBody] string request)
     {
@@ -32,12 +32,14 @@ public class OpenAiController : ControllerBase
         //var response = await _openAiService.GetResponseAsync(AppendToThePrompt(request.Prompt));
         var response = await _openAiService.GetResponseAsync(request);
 
+
         var sub = User.FindFirst("sub")?.Value;
         if(sub != null)
         {
             var prompt = new Prompt{UserId = sub, Text = request, Response = response};
             await _promptService.CreatePromptAsync(prompt);
         }
+        
 
         return Ok(new { response });
     }

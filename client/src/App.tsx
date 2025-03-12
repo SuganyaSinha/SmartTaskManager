@@ -36,7 +36,7 @@ function App() {
     </Routes>
   </Router>
   */
- /*
+
   <Auth0Provider
   domain={process.env.REACT_APP_DOMAIN!}
   clientId={process.env.REACT_APP_CLIENT_ID!}
@@ -49,8 +49,8 @@ function App() {
   <AuthButtons></AuthButtons>
 
 </Auth0Provider>
-*/
-<TaskScheduler></TaskScheduler>
+
+/*<TaskScheduler></TaskScheduler>*/
   );
 }
 

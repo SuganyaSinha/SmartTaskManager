@@ -4,6 +4,8 @@ import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import tasksData from "./tasks.json";
 import { NewTask } from "../types/common";
+import { useAuth0 } from "@auth0/auth0-react";
+import { postUserInput } from '../services/StpService';
 
 const localizer = momentLocalizer(moment);
 
@@ -11,6 +13,10 @@ const TaskScheduler = () => {
   const [view, setView] = useState<"day" | "week" | "month" | "work_week" | "agenda">("month");
   const [events, setEvents] = useState<NewTask[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [userInput, setUserInput] = useState("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const { getAccessTokenSilently } = useAuth0();
 
   useEffect(() => {
     const formattedEvents = tasksData.map(task => ({
@@ -40,13 +46,68 @@ const TaskScheduler = () => {
         };
       };
 
+      const addTasksFromApi = (apiTasks: NewTask[]) => {
+        const formattedApiTasks = apiTasks.map(task => ({
+          title: task.title,
+          start: new Date(task.start),
+          end: new Date(task.end),
+          priority: task.priority,
+          comments: task.comments,
+        }));
+      
+        //setEvents(prevEvents => [...prevEvents, ...formattedApiTasks]);
+        setEvents(prevEvents => {
+            const newEvents = [...prevEvents, ...formattedApiTasks];
+            console.log("Updated Events:", newEvents); // Debug
+            return newEvents;
+          });
+      };
+
     // Handle navigation (Next, Back, or clicking a day)
     const handleNavigate = (date: React.SetStateAction<Date>) => {
         setSelectedDate(date);
       };
 
-  return (
-    <div style={{ height: "100vh" }}>
+      const handleUserSubmit = async () => {
+        if (!userInput.trim()) return;
+
+        setIsLoading(true);
+        setError(null);
+        try{
+            const response = await postUserInput(userInput, getAccessTokenSilently);
+            const test = response;
+            console.log("API Response:", response);
+            addTasksFromApi(response);
+        }
+        catch(err)
+        {
+            setError("Could not get data.Error in handleSubmit");
+        }
+        finally{
+            setIsLoading(false);
+        }
+      }
+
+
+   return (
+    <div style={{ display: "flex", height: "100vh" }}>
+      <div style={{ width: "20%", padding: "20px", borderRight: "1px solid #ddd" }}>
+        <div>
+            <textarea 
+            value={userInput} 
+            onChange={(e) => setUserInput(e.target.value)}
+            placeholder="Enter task details..."
+            style={{ width: "100%", height: "100px", padding: "10px" }}
+            />
+        </div>
+        <div>
+             <button onClick={handleUserSubmit} disabled={isLoading} className="w-full mt-2 p-2 bg-blue-500 text-white rounded">{isLoading ? 'Loading...' : 'Generate Schedule'}</button>
+        </div>
+        <div>
+              {error && <div style={{ color: 'red' }}>{error}</div>}
+        </div>
+      </div>
+      <div style={{ width: "80%" }}>
       <Calendar
         localizer={localizer}
         events={events}
@@ -59,7 +120,9 @@ const TaskScheduler = () => {
         onNavigate={handleNavigate}
         style={{ width: "100%" }}
         eventPropGetter={eventStyleGetter}
+        //key={events.length}
       />
+      </div>
     </div>
   );
 };

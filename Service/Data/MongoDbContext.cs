@@ -13,7 +13,7 @@ namespace SmartTaskManager.Data
             _database = client.GetDatabase(config["MongoDB:DatabaseName"]);
         }
 
-        public IMongoCollection<TaskItem> TaskCollection => _database.GetCollection<TaskItem>("Task");
+        public IMongoCollection<TaskItem> TaskCollection => _database.GetCollection<TaskItem>("Tasks");
 
         public IMongoCollection<UserProfile> UserProfiles => _database.GetCollection<UserProfile>("UserProfiles");
 

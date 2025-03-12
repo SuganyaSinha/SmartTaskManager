@@ -1,86 +1,10 @@
 [
     {
       "title": "Plan weekly team meeting",
+      "day" : "Friday",
       "start": "2025-03-21T09:00:00",
       "end": "2025-03-21T10:00:00",
       "priority": "high",
       "comments": "Discuss project milestones and assign tasks for the week."
-    },
-    {
-      "title": "Complete UI design for task planner",
-      "start": "2025-03-10T11:00:00",
-      "end": "2025-03-10T14:00:00",
-      "priority": "medium",
-      "comments": "Focus on refining the split-screen layout with Tailwind CSS."
-    },
-    {
-      "title": "Write API endpoints for task creation",
-      "start": "2025-03-17T15:00:00",
-      "end": "2025-03-17T17:00:00",
-      "priority": "high",
-      "comments": "Implement POST /tasks in .NET Core backend."
-    },
-    {
-      "title": "Test task history feature",
-      "start": "2025-03-09T09:00:00",
-      "end": "2025-03-09T12:30:00",
-      "priority": "medium",
-      "comments": "Verify that prompt history displays only when prompts exist."
-    },
-    {
-      "title": "Task2",
-      "start": "2025-03-11T13:00:00",
-      "end": "2025-03-11T14:30:00",
-      "priority": "medium",
-      "comments": "Verify that prompt history displays only when prompts exist."
-    },
-    {
-      "title": "Task3",
-      "start": "2025-03-11T14:00:00",
-      "end": "2025-03-11T19:30:00",
-      "priority": "medium",
-      "comments": "Verify that prompt history displays only when prompts exist."
-    },
-    {
-      "title": "Fix Tailwind CSS configuration issues",
-      "start": "2025-03-15T11:00:00",
-      "end": "2025-03-15T13:00:00",
-      "priority": "high",
-      "comments": "Resolve border-border class error by updating tailwind.config.js."
-    },
-    {
-      "title": "Add dark mode toggle",
-      "start": "2025-03-25T09:00:00",
-      "end": "2025-03-25T11:00:00",
-      "priority": "low",
-      "comments": "Implement a toggle button to switch between light and dark themes."
-    },
-    {
-      "title": "Review pull requests",
-      "start": "2025-03-12T14:00:00",
-      "end": "2025-03-12T15:30:00",
-      "priority": "medium",
-      "comments": "Check for any pending PRs in the smart-task-manager repo."
-    },
-    {
-      "title": "Update project documentation",
-      "start": "2025-03-13T10:00:00",
-      "end": "2025-03-13T12:00:00",
-      "priority": "low",
-      "comments": "Document the new UI features and API endpoints in README."
-    },
-    {
-      "title": "Optimize task generation API",
-      "start": "2025-03-13T13:00:00",
-      "end": "2025-03-13T15:00:00",
-      "priority": "medium",
-      "comments": "Reduce response time by caching frequent prompts."
-    },
-    {
-      "title": "Prepare demo for stakeholders",
-      "start": "2025-03-14T09:00:00",
-      "end": "2025-03-14T11:00:00",
-      "priority": "high",
-      "comments": "Create a presentation showing the task planner’s features."
     }
   ]
