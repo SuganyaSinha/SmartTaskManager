@@ -153,7 +153,7 @@ Now, generate tasks based on these instructions and return only a valid JSON arr
             //messages = new[] { new { role = "user", content = userInput } },
             messages = _conversationHistory, 
             
-            max_tokens = 300 // Limit token usage to reduce cost
+            max_tokens = 200 // Limit token usage to reduce cost
         };
 
         var requestContent = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");

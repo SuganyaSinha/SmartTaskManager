@@ -5,7 +5,8 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import tasksData from "./tasks.json";
 import { NewTask } from "../types/common";
 import { useAuth0 } from "@auth0/auth0-react";
-import { postUserInput } from '../services/StpService';
+import { postUserInput } from '../services/openAiService';
+import {getTasksForTheMonth} from '../services/taskService';
 
 const localizer = momentLocalizer(moment);
 
@@ -67,6 +68,26 @@ const TaskScheduler = () => {
     const handleNavigate = (date: React.SetStateAction<Date>) => {
         setSelectedDate(date);
       };
+
+      // Get user tasks for the current month
+      const getTasksForTheSelectedMonth = async () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+
+        try{
+            const response = await getTasksForTheMonth( year, month, getAccessTokenSilently);
+            const test = response;
+            console.log("API Response:", response);
+        }
+        catch(err)
+        {
+            setError("Could not get data.Error in handleSubmit");
+        }
+        finally{
+            setIsLoading(false);
+        }
+      }
 
       const handleUserSubmit = async () => {
         if (!userInput.trim()) return;

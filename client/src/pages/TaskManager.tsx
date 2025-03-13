@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { postUserInput } from '../services/StpService';
+import { postUserInput } from '../services/openAiService';
 import { getUserInformation } from '../services/StpService';
 import { Schedule } from '../types/common';
 import CalendarView from './CalendarView';
@@ -29,7 +29,7 @@ const TaskManager: React.FC = () => {
     try{
         const response = await postUserInput(input, getAccessTokenSilently);
         const test = response;
-        setSchedule(response);
+        //setSchedule(response);
         addPromptToHistory(input);
     }
     catch(err)

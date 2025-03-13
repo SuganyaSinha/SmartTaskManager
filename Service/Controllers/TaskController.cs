@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartTaskManager.Models;
 using SmartTaskManager.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TaskManagerApi.Controllers
 {
@@ -15,10 +16,12 @@ namespace TaskManagerApi.Controllers
             _taskService = taskService;
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllTasks() =>
             Ok(await _taskService.GetAllTasksAsync());
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(string id)
         {
@@ -26,6 +29,7 @@ namespace TaskManagerApi.Controllers
             return task == null ? NotFound() : Ok(task);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateTask(TaskItem task)
         {
@@ -33,6 +37,7 @@ namespace TaskManagerApi.Controllers
             return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, task);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTask(string id, TaskItem task)
         {
@@ -42,7 +47,8 @@ namespace TaskManagerApi.Controllers
             await _taskService.UpdateTaskAsync(id, task);
             return NoContent();
         }
-
+        
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(string id)
         {
