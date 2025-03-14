@@ -16,9 +16,14 @@ namespace SmartTaskManager.Services
             _taskRepositary = taskRepositary;
          }
 
-        public async Task<List<TaskItem>> GetAllTasksAsync()
+        public async Task<List<TaskItem>> GetAllTasksAsync(string userId)
         {
-            return await _taskRepositary.GetAllTasksAsync();
+            return await _taskRepositary.GetAllTasksAsync(userId);
+        }
+
+        public async Task<List<TaskItem>> GetTasksByMonthAsync(string userId, int year, int month)
+        {
+            return await _taskRepositary.GetTasksByMonthAsync(userId, year, month);
         }
         
         public async Task<TaskItem?> GetTaskByIdAsync(string id) 
@@ -26,19 +31,19 @@ namespace SmartTaskManager.Services
             return await _taskRepositary.GetTaskByIdAsync(id);
         }
 
-        public async Task CreateTaskAsync(TaskItem task) 
+        public async Task<TaskItem> CreateTaskAsync(string userId, TaskItem task) 
         {
-            await _taskRepositary.CreateTaskAsync(task);
+            return await _taskRepositary.CreateTaskAsync(task, userId);
         }
 
-        public async Task UpdateTaskAsync(string id, TaskItem task)
+        public async Task<TaskItem> UpdateTaskAsync(string id, string userId, TaskItem task)
         {
-            await _taskRepositary.UpdateTaskAsync(id,task);      
+            return await _taskRepositary.UpdateTaskAsync(id, userId, task);      
         }
 
-        public async Task DeleteTaskAsync(string id) 
+        public async Task<bool> DeleteTaskAsync(string id, string userId) 
         {
-            await _taskRepositary.DeleteTaskAsync(id);
+            return await _taskRepositary.DeleteTaskAsync(id, userId);
         }
     }
 }

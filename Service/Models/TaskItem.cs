@@ -12,10 +12,19 @@ namespace SmartTaskManager.Models
         [BsonElement("title")]
         public string Title { get; set; } = string.Empty;
 
-        [BsonElement("description")]
-        public string Description { get; set; } = string.Empty;
+        [BsonElement("start")]
+        public DateTime Start { get; set; }
 
-        [BsonElement("isCompleted")]
-        public bool IsCompleted { get; set; } = false;
+        [BsonElement("end")]
+        public DateTime End { get; set; }
+
+        [BsonElement("priority")]
+        public string Priority { get; set; } = string.Empty;
+
+        [BsonElement("comments")]
+        public string Comments { get; set; } = string.Empty;
+
+        [BsonElement("userid")]
+         public string UserId { get; set; } = string.Empty;
     }
 }

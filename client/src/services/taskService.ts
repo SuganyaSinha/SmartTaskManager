@@ -40,9 +40,8 @@ export const getTasksForTheMonth = async (year : number,
     try{
         const token = await getAccessTokenSilently();
         const response = await api.get(
-            '/tasks/monthly',
+            `/api/tasks/month/${year}/${month}`,
             {
-                params : { year , month },
                 headers: {
                     'Content-Type': 'application/json', 
                      Authorization: `Bearer ${token}`
@@ -50,7 +49,7 @@ export const getTasksForTheMonth = async (year : number,
             }
             );
     
-        const test = JSON.parse(response.data.response);
+        const test = response.data;
         return response.data;
     }
     catch(error)

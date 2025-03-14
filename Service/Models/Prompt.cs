@@ -10,13 +10,13 @@ namespace SmartTaskManager.Models
         public string Id { get; set; }
 
         [BsonElement("userId")]
-        public string UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
         [BsonElement("text")]
-        public string Text { get; set; }
+        public string Text { get; set; } = string.Empty;
 
         [BsonElement("response")]
-        public string Response { get; set; }
+        public string Response { get; set; } = string.Empty;
 
         [BsonElement("timestamp")]
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;

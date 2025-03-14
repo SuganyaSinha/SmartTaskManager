@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -13,22 +13,42 @@ const localizer = momentLocalizer(moment);
 const TaskScheduler = () => {
   const [view, setView] = useState<"day" | "week" | "month" | "work_week" | "agenda">("month");
   const [events, setEvents] = useState<NewTask[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const { getAccessTokenSilently } = useAuth0();
 
+      // Get user tasks for the current month
+      const getTasksForTheSelectedMonth = useCallback (async (date : Date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+
+        try{
+            const response = await getTasksForTheMonth( year, month, getAccessTokenSilently);
+            console.log("API Response:", response);
+            const formattedEvents = response.map(task => ({
+                title: task.title,
+                start: new Date(task.start),
+                end: new Date(task.end),
+                priority: task.priority,
+                comments: task.comments,
+              }));
+              setEvents(formattedEvents);
+        }
+        catch(err)
+        {
+            setError("Could not get data.Error in getTasksForTheSelectedMonth");
+        }
+        finally{
+
+        }
+      },[getAccessTokenSilently]);
+
+  // Fetch tasks when the component mounts
   useEffect(() => {
-    const formattedEvents = tasksData.map(task => ({
-      title: task.title,
-      start: new Date(task.start),
-      end: new Date(task.end),
-      priority: task.priority,
-      comments: task.comments,
-    }));
-    setEvents(formattedEvents);
-  }, []);
+    getTasksForTheSelectedMonth(currentDate);
+  }, [getTasksForTheSelectedMonth, currentDate]);
 
     // Calculate total hours per day
     const totalHoursPerDay = events.reduce((acc : { [key: string]: number }, event : NewTask) => {
@@ -66,28 +86,10 @@ const TaskScheduler = () => {
 
     // Handle navigation (Next, Back, or clicking a day)
     const handleNavigate = (date: React.SetStateAction<Date>) => {
-        setSelectedDate(date);
+        setCurrentDate(date);
       };
 
-      // Get user tasks for the current month
-      const getTasksForTheSelectedMonth = async () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth() + 1;
-
-        try{
-            const response = await getTasksForTheMonth( year, month, getAccessTokenSilently);
-            const test = response;
-            console.log("API Response:", response);
-        }
-        catch(err)
-        {
-            setError("Could not get data.Error in handleSubmit");
-        }
-        finally{
-            setIsLoading(false);
-        }
-      }
+  
 
       const handleUserSubmit = async () => {
         if (!userInput.trim()) return;
@@ -137,7 +139,7 @@ const TaskScheduler = () => {
         views={["month", "week", "day"]}
         view={view}
         onView={setView}
-        date={selectedDate}
+        date={currentDate}
         onNavigate={handleNavigate}
         style={{ width: "100%" }}
         eventPropGetter={eventStyleGetter}
