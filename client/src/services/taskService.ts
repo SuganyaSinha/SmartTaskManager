@@ -67,7 +67,7 @@ export const getTasksForTheMonth = async (year : number,
     try{
         const token = await getAccessTokenSilently();
         const response = await api.post(
-            '/tasks',
+            'api/tasks',
             task,
             {
                 headers: {
@@ -76,8 +76,9 @@ export const getTasksForTheMonth = async (year : number,
                 },
             }
             );
+
+        const test = response.data;
     
-        const test = JSON.parse(response.data.response);
         return response.data;
     }
     catch(error)

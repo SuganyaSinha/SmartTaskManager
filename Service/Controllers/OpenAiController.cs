@@ -14,6 +14,15 @@ public class OpenAiController : ControllerBase
     private readonly OpenAiService _openAiService;
     private readonly IPromptService _promptService;
 
+    private string GetUserId()
+    {
+        var userId = User.FindFirst("sub")?.Value;
+        if(string.IsNullOrEmpty(userId))
+            throw new Exception("Could not get the User Id from the token");
+        else
+            return userId;
+    }
+
     public OpenAiController( OpenAiService openAiService,
                             IPromptService promptService )
     {
@@ -30,7 +39,7 @@ public class OpenAiController : ControllerBase
             return BadRequest("Prompt cannot be empty.");
         }
         //var response = await _openAiService.GetResponseAsync(AppendToThePrompt(request.Prompt));
-        var response = await _openAiService.GetResponseAsync(request);
+        var response = await _openAiService.GetResponseAsync(request, GetUserId());
 
 
         var sub = User.FindFirst("sub")?.Value;

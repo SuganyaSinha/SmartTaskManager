@@ -2,13 +2,16 @@ import api from "./api"
 import { NewTask } from '../types/common';
 import { GetTokenSilentlyOptions } from "@auth0/auth0-react";
 import { GetTokenSilentlyVerboseResponse } from "@auth0/auth0-spa-js";
+import { createTask } from "./taskService";
+
 
 export const postUserInput = async (input: string, getAccessTokenSilently: { (options: GetTokenSilentlyOptions & { detailedResponse: true; }): Promise<GetTokenSilentlyVerboseResponse>; (options?: GetTokenSilentlyOptions): Promise<string>; (options: GetTokenSilentlyOptions): Promise<GetTokenSilentlyVerboseResponse | string>; }) : Promise<NewTask[]>=> {
   try {
-     
+    
+    // Get response from openai api
+    
     const token = await getAccessTokenSilently();
-    console.log(token);
-      const response = await api.post(
+    const response = await api.post(
         '/api/openai/ask',
         JSON.stringify(input),
         {
@@ -17,11 +20,52 @@ export const postUserInput = async (input: string, getAccessTokenSilently: { (op
                  Authorization: `Bearer ${token}`
             },
         }
-        );
-        const test = JSON.parse(response.data.response);
-      return JSON.parse(response.data.response); 
+    );
+    const openAiTasks:NewTask[] = JSON.parse(response.data.response);
+
+      /*Transform OpenAI tasks into TaskItem format and create them
+      const taskItems = openAiTasks.map(task=> ({
+        id: "", // Leave empty; MongoDB will generate it
+        title: task.title,
+        start: new Date(task.start), // Convert to Date object
+        end: new Date(task.end),     // Convert to Date object
+        priority: task.priority,
+        comments: task.comments,
+        userId: userId,              // Add userId from Auth0
+      }));
+      */
+
+      const results = await Promise.all(
+        openAiTasks.map(task => createTask(task, getAccessTokenSilently))
+      );
+  /*
+      const createdTasks: NewTask[] = results
+        .filter(r => r.status === 'fulfilled')
+        .map(r => r.value);
+      const errors = results
+        .filter(r => r.status === 'rejected')
+        .map((r, i) => ({
+          task: taskItems[i],
+          error: r.reason.response?.data || r.reason.message,
+        }));
+
+        if (errors.length > 0) {
+          const errorMsg = errors.map(e => `${e.task.title}: ${e.error}`).join(", ");
+          console.log(errorMsg);
+          setError(`Failed to create some tasks: ${errorMsg}`);
+          if (createdTasks.length > 0) {
+            addTasksFromApi(createdTasks); // Optional: Show partial success
+          }else {
+            addTasksFromApi(createdTasks);
+          }*/
+            return results;
+        
+
+       
+
+      //return JSON.parse(response.data.response); 
   } catch (error) {
-      console.error("API call failed:", error);
+      console.error("postUserInput API call failed:", error);
       throw error;
   }
 };
