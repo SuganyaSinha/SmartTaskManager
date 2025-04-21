@@ -152,45 +152,55 @@ Now, generate tasks based on these instructions and return only a valid JSON arr
     private async Task<string> GetExistingTasksForTheUser(string userId)
     {
         var tasks = await taskRepositary.GetAllTasksAsync(userId);
+
+        var tasksForOpenAi = tasks.Select(t => new OpenAiTaskItem
+        {
+            Title = t.Title,
+            Start = t.Start,
+            End = t.End,
+            Priority = t.Priority,
+            Comments = t.Comments
+        }).ToList();
+
         string jsonString = JsonSerializer.Serialize(
-                            tasks, new JsonSerializerOptions { WriteIndented = true });
+                            tasksForOpenAi, new JsonSerializerOptions { WriteIndented = true });
 
         return jsonString;
     }
 
-    private async Task<string> GetInitialSystemPrompt(string userId)
+    private string GetInitialSystemPrompt(string userId)
     {
-        string currentDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        int currentYear = DateTime.UtcNow.Year;
 
-        var result = await GetExistingTasksForTheUser(userId);
 
         return 
-        @"You are an intelligent task planner. Your job is to analyze the user's tasks and determine the best way to schedule them. If the user does not specify a timing, suggest the best possible time based on typical productivity hours (e.g., morning for high-priority tasks, afternoon for reviews, evening for personal tasks). Give breaks between the tasks so that brain is not overloaded. Given the following instructions, generate a structured list of tasks in raw JSON format without any escaped characters, newlines, or additional formatting.
+       @"You are an intelligent task planner. Your job is to analyze the user's tasks and determine the best way to schedule them. If the user does not specify a timing, suggest the best possible time based on typical productivity hours (e.g., morning for high-priority tasks, afternoon for reviews, evening for personal tasks). Give breaks between the tasks so that brain is not overloaded. Given the following instructions, generate a structured list of tasks in raw JSON format without any escaped characters, newlines, or additional formatting.
 
 ### Instructions:
 1. Each task should include the following fields:
    - **title**: Name of the task.
-   - **day**: Day of the week (e.g., ""Monday"").
-   - **start**: Start time in ISO 8601 format (e.g., ""2025-03-24T08:00:00"").
-   - **end**: End time in ISO 8601 format (e.g., ""2025-03-24T11:00:00"").
+   - **day**: Day of the week (e.g., ""Monday"") based on the LOCAL date of the task.
+   - **start**: Start time in ISO 8601 UTC format with 'Z' suffix (e.g., ""2025-03-21T22:00:00Z""). This MUST be the UTC time, not local time.
+   - **end**: End time in ISO 8601 UTC format with 'Z' suffix (e.g., ""2025-03-21T23:00:00Z""). This MUST be the UTC time, not local time.
    - **priority**: Task priority (high, medium, low).
    - **comments**: Short description of the task.
 
 2. **Date Interpretation Rules**:
-   - The current date is 2025-03-11.
-   - If the user specifies a day of the week (e.g., ""Monday""), interpret it as the next occurrence of that day in the upcoming week relative to the current date (2025-03-11). For example:
-     - If today is Tuesday, 2025-03-11, and the user says ""Monday"", schedule the task for the next Monday, which is 2025-03-17.
-     - If the user says ""Wednesday"", schedule the task for the next Wednesday, which is 2025-03-12.
-   - If the user specifies a month (e.g., ""April""), schedule tasks only within that month of the current year (2025). Do not schedule tasks beyond the specified month. For example:
-     - If the user says ""In April, every Friday"", schedule tasks for Fridays in April 2025 only (e.g., April 4, April 11, April 18, April 25).
-     - Do not extend into May or any other month unless explicitly stated.
-   - If the user specifies a recurring pattern like ""every alternate Friday"", start from the first occurrence of that day in the specified month and schedule every other occurrence within that month only. For example:
-     - If the user says ""In April, every alternate Friday"", start with the first Friday in April 2025 (April 4) and schedule on alternate Fridays (April 4, April 18), excluding any dates outside April (e.g., do not include May 2).
-   - If the user specifies a duration (e.g., ""3 hours""), calculate the end time by adding the duration to the start time, ensuring breaks between tasks.
-   - If no duration is specified, assume a default duration of 1 hour for each task.
+   - User's current local date and time: ""[currentDate]"" (e.g., ""2025-03-25T19:50:18-07:00"" for PDT).
+   - While converting Start time to UTC, if it is falling into next day, change the start date also to next date.
+   - While converting End time to UTC, if it is rolling into next day, change the end date also to next date.
 
-3. **Formatting Requirements**:
+3. **Existing Schedule Context**:
+   - The user has the following pre-existing tasks (read-only, do not modify or reschedule these):
+     [INSERT_EXISTING_TASKS_HERE]
+   - Consider the time slots occupied by these existing tasks when scheduling new tasks. Avoid overlapping with existing tasks and ensure the user's total daily load (existing + new tasks) does not exceed 8 hours per day.
+
+4. **Scheduling Rules for New Tasks**:
+   - Only schedule new tasks based on the user's latest input. Do not alter, delete, or reschedule any existing tasks from the context.
+   - If time is given (e.g., ""6-7""), interpret as local time (e.g., 6 PM to 7 PM).
+   - Schedule new tasks around the existing tasks, leaving at least a 30-minute break between tasks (existing or new).
+   - If the user's daily load (existing + new tasks) would exceed 8 hours, prioritize scheduling new tasks on a different day or reduce the scope (e.g., shorten duration) with a comment explaining the adjustment.
+
+5. **Formatting Requirements**:
    - Return only valid JSON as a compact array on a single line.
    - Do not include any explanations, extra text, newlines (`\n`), indentation, or additional whitespace.
    - Do not enclose the JSON in quotes or use any escape characters (e.g., `\r\n`, `\n`).
@@ -198,16 +208,23 @@ Now, generate tasks based on these instructions and return only a valid JSON arr
    - Output must be a raw, unescaped JSON array that can be directly parsed.
 
 ## Example Output (Strict JSON Format):
-[{""title"":""Plan weekly team meeting"",""day"":""Friday"",""start"":""2025-03-21T09:00:00"",""end"":""2025-03-21T10:00:00"",""priority"":""high"",""comments"":""Discuss project milestones and assign tasks for the week.""}]
+[{""title"":""Do yoga"",""day"":""Wednesday"",""start"":""2025-03-27T00:00:00Z"",""end"":""2025-03-27T00:30:00Z"",""priority"":""medium"",""comments"":""Do yoga on Wednesday at 5 PM.""}]
 
-Now, generate tasks based on these instructions and return only a valid JSON array without extra formatting.
+Now, generate tasks based on these instructions with current date ""[currentDate]"" and return only a valid JSON array without extra formatting.
 ";
 
     }
 
-    public async Task<string> GetResponseAsync(string userInput, string userId)
+    public async Task<string> GetResponseAsync(OpenAiRequestBody userInput, string userId)
     {
-        var initialSystemPrompt = await GetInitialSystemPrompt(userId);
+        string currentDate = userInput.CurrentDate;
+        int currentYear = DateTime.UtcNow.Year;
+        var existingTasks = await GetExistingTasksForTheUser(userId);
+        var initialSystemPrompt = GetInitialSystemPrompt(userId);
+        initialSystemPrompt = initialSystemPrompt.Replace("[INSERT_EXISTING_TASKS_HERE]", existingTasks)
+                                                 .Replace("[currentDate]", currentDate);
+                                                 //.Replace("[currentYear]", currentYear.ToString());
+
         _conversationHistory.Add(new Dictionary<string, string>
          { 
             { "role", "system" }, 
@@ -217,12 +234,12 @@ Now, generate tasks based on these instructions and return only a valid JSON arr
         _conversationHistory.Add(new Dictionary<string, string> 
         { 
             { "role", "user" },
-            { "content", userInput } 
+            { "content", userInput.UserInput } 
         });
 
         var requestBody = new
         {
-            model = "gpt-3.5-turbo", // Use gpt-3.5-turbo for cost-effectiveness
+            model = "gpt-4o", // Use gpt-3.5-turbo for cost-effectiveness
             //messages = new[] { new { role = "user", content = userInput } },
             messages = _conversationHistory, 
             

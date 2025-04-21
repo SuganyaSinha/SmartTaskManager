@@ -3,17 +3,21 @@ import { NewTask } from '../types/common';
 import { GetTokenSilentlyOptions } from "@auth0/auth0-react";
 import { GetTokenSilentlyVerboseResponse } from "@auth0/auth0-spa-js";
 import { createTask } from "./taskService";
-
+import moment from "moment";
 
 export const postUserInput = async (input: string, getAccessTokenSilently: { (options: GetTokenSilentlyOptions & { detailedResponse: true; }): Promise<GetTokenSilentlyVerboseResponse>; (options?: GetTokenSilentlyOptions): Promise<string>; (options: GetTokenSilentlyOptions): Promise<GetTokenSilentlyVerboseResponse | string>; }) : Promise<NewTask[]>=> {
   try {
     
     // Get response from openai api
+    const currentDate = moment().format('YYYY-MM-DDTHH:mm:ssZ'); 
     
     const token = await getAccessTokenSilently();
     const response = await api.post(
         '/api/openai/ask',
-        JSON.stringify(input),
+        {
+          userInput: input,
+          currentDate: currentDate, // Pass user's local time
+        },
         {
             headers: {
                 'Content-Type': 'application/json', 

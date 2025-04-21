@@ -7,6 +7,7 @@ import { NewTask } from "../types/common";
 import { useAuth0 } from "@auth0/auth0-react";
 import { postUserInput } from '../services/openAiService';
 import {getTasksForTheMonth} from '../services/taskService';
+import AudioInput from "./AudioInput";
 
 const localizer = momentLocalizer(moment);
 
@@ -111,6 +112,11 @@ const TaskScheduler = () => {
         }
       }
 
+      // Callback to update userInput with transcript from AudioInput
+      const handleTranscriptChange = useCallback((transcript: string) => {
+        setUserInput(transcript);
+      }, []);
+
 
    return (
     <div style={{ display: "flex", height: "100vh" }}>
@@ -125,6 +131,9 @@ const TaskScheduler = () => {
         </div>
         <div>
              <button onClick={handleUserSubmit} disabled={isLoading} className="w-full mt-2 p-2 bg-blue-500 text-white rounded">{isLoading ? 'Loading...' : 'Generate Schedule'}</button>
+        </div>
+        <div>
+          <AudioInput onTranscriptChange={handleTranscriptChange} />
         </div>
         <div>
               {error && <div style={{ color: 'red' }}>{error}</div>}
