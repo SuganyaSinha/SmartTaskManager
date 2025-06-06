@@ -40,3 +40,9 @@ export interface Schedule {
         [day: string]: Day;
     };
 }
+
+
+export interface UserProfile {
+  routine: string;
+  personality: string;
+}

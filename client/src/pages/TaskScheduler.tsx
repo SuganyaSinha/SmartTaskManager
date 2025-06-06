@@ -152,6 +152,13 @@ const TaskScheduler = () => {
         onNavigate={handleNavigate}
         style={{ width: "100%" }}
         eventPropGetter={eventStyleGetter}
+        selectable
+        onSelectSlot={(slotInfo) => {
+          if (view === "month") {
+          setCurrentDate(slotInfo.start);
+          setView("day");
+          }
+        }}
         //key={events.length}
       />
       </div>
