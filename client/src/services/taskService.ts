@@ -96,8 +96,14 @@ export const updateTask = async (taskId: string, updates: Partial<NewTask>, getA
     try{
         const token = await getAccessTokenSilently();
         const response = await api.patch(
-            '/tasks',
-            updates,
+            `/api/tasks/${taskId}`,
+            {
+                title: updates.title,
+                start: updates.start,
+                end: updates.end,
+                priority: updates.priority,
+                comments: updates.comments
+            },
             {
                 headers: {
                     'Content-Type': 'application/json', 
@@ -106,7 +112,11 @@ export const updateTask = async (taskId: string, updates: Partial<NewTask>, getA
             }
             );
     
-        const test = JSON.parse(response.data.response);
+        //const test = JSON.parse(response.data);
+        console.log("updateTask API response:", response);
+       
+        //console.log("updateTask API response:", test);
+  
         return response.data;
     }
     catch(error)

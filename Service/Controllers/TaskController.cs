@@ -60,9 +60,23 @@ namespace TaskManagerApi.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<TaskItem>> UpdateTask(string id, [FromBody]TaskItem task)
         {
-            
             var updatedTask = await _taskService.UpdateTaskAsync(id, GetUserId(), task);
             return Ok(updatedTask);
+        }
+
+        //[Authorize]
+        [HttpPatch("{id}")]
+        public async Task<ActionResult<TaskItem>> PatchTask(string id, [FromBody]TaskUpdateDto taskUpdate)
+        {
+            try
+            {
+                var patchedTask = await _taskService.PatchTaskAsync(id, GetUserId(), taskUpdate);
+                return Ok(patchedTask);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
 
         //[Authorize]

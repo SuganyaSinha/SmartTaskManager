@@ -45,5 +45,22 @@ namespace SmartTaskManager.Services
         {
             return await _taskRepositary.DeleteTaskAsync(id, userId);
         }
+
+        public async Task<TaskItem> PatchTaskAsync(string id, string userId, TaskUpdateDto taskUpdate)
+        {
+            var existingTask = await _taskRepositary.GetTaskByIdAsync(id);
+            if (existingTask == null || existingTask.UserId != userId)
+            {
+                throw new KeyNotFoundException("Task not found or unauthorized");
+            }
+
+            if (taskUpdate.Title != null) existingTask.Title = taskUpdate.Title;
+            if (taskUpdate.Start.HasValue) existingTask.Start = taskUpdate.Start.Value;
+            if (taskUpdate.End.HasValue) existingTask.End = taskUpdate.End.Value;
+            if (taskUpdate.Priority != null) existingTask.Priority = taskUpdate.Priority;
+            if (taskUpdate.Comments != null) existingTask.Comments = taskUpdate.Comments;
+
+            return await _taskRepositary.UpdateTaskAsync(id, userId, existingTask);
+        }
     }
 }

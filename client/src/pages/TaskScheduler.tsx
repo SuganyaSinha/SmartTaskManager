@@ -6,8 +6,9 @@ import tasksData from "./tasks.json";
 import { NewTask } from "../types/common";
 import { useAuth0 } from "@auth0/auth0-react";
 import { postUserInput } from '../services/openAiService';
-import {getTasksForTheMonth} from '../services/taskService';
+import { getTasksForTheMonth, updateTask } from '../services/taskService';
 import AudioInput from "./AudioInput";
+import TaskEditModal from "../components/TaskEditModal";
 
 const localizer = momentLocalizer(moment);
 
@@ -18,6 +19,8 @@ const TaskScheduler = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedTask, setSelectedTask] = useState<NewTask | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { getAccessTokenSilently } = useAuth0();
 
       // Get user tasks for the current month
@@ -29,6 +32,7 @@ const TaskScheduler = () => {
             const response = await getTasksForTheMonth( year, month, getAccessTokenSilently);
             console.log("API Response:", response);
             const formattedEvents = response.map(task => ({
+                id: task.id, // <-- Add this line
                 title: task.title,
                 start: new Date(task.start),
                 end: new Date(task.end),
@@ -70,6 +74,7 @@ const TaskScheduler = () => {
 
       const addTasksFromApi = (apiTasks: NewTask[]) => {
         const formattedApiTasks = apiTasks.map(task => ({
+          id: task.id, // <-- Add this line
           title: task.title,
           start: new Date(task.start),
           end: new Date(task.end),
@@ -77,7 +82,6 @@ const TaskScheduler = () => {
           comments: task.comments,
         }));
       
-        //setEvents(prevEvents => [...prevEvents, ...formattedApiTasks]);
         setEvents(prevEvents => {
             const newEvents = [...prevEvents, ...formattedApiTasks];
             console.log("Updated Events:", newEvents); // Debug
@@ -90,7 +94,39 @@ const TaskScheduler = () => {
         setCurrentDate(date);
       };
 
-  
+  const handleSelectEvent = (event: NewTask) => {
+    setSelectedTask(event);
+    setIsModalOpen(true);
+  };
+  const handleUpdateTask = async (updatedTask: NewTask) => {
+    try {
+      if (!selectedTask?.id) {
+        throw new Error('Task ID is missing');
+      }
+      const apiResponse = await updateTask(selectedTask.id, updatedTask, getAccessTokenSilently);
+      // Update local state using the response from the API and match by id
+      setEvents(events.map(event => 
+        event.id === apiResponse.id
+          ? {
+              ...event,
+              ...apiResponse,
+              start: new Date(apiResponse.start),
+              end: new Date(apiResponse.end),
+            }
+          : event
+      ));
+      setIsModalOpen(false);
+      setSelectedTask(null);
+    } catch (err) {
+      console.error('Failed to update task:', err);
+      setError('Failed to update task. Please try again.');
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTask(null);
+  };
 
       const handleUserSubmit = async () => {
         if (!userInput.trim()) return;
@@ -140,28 +176,36 @@ const TaskScheduler = () => {
         </div>
       </div>
       <div style={{ width: "80%" }}>
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        views={["month", "week", "day"]}
-        view={view}
-        onView={setView}
-        date={currentDate}
-        onNavigate={handleNavigate}
-        style={{ width: "100%" }}
-        eventPropGetter={eventStyleGetter}
-        selectable
-        onSelectSlot={(slotInfo) => {
-          if (view === "month") {
-          setCurrentDate(slotInfo.start);
-          setView("day");
-          }
-        }}
-        //key={events.length}
-      />
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          views={["month", "week", "day"]}
+          view={view}
+          onView={setView}
+          date={currentDate}
+          onNavigate={handleNavigate}
+          style={{ width: "100%" }}
+          eventPropGetter={eventStyleGetter}
+          selectable
+          onSelectEvent={handleSelectEvent}
+          onSelectSlot={(slotInfo) => {
+            if (view === "month") {
+              setCurrentDate(slotInfo.start);
+              setView("day");
+            }
+          }}
+        />
       </div>
+      {isModalOpen && selectedTask && (
+        <TaskEditModal 
+          isOpen={isModalOpen} 
+          onClose={handleCloseModal} 
+          task={selectedTask} 
+          onSave={handleUpdateTask}
+        />
+      )}
     </div>
   );
 };

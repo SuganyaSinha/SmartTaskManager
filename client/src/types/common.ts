@@ -22,6 +22,7 @@
 export type TaskPriority = "high" | "medium" | "low";
 
 export interface NewTask {
+  id?: string;  // Optional because new tasks won't have an id yet
   title: string;
   start: Date; // ISO 8601 date string, parsed into Date in code
   end: Date;   // ISO 8601 date string, parsed into Date in code
