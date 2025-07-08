@@ -45,6 +45,8 @@ function App() {
     audience : process.env.REACT_APP_AUDIENCE,
     scope: "openid profile email"
   }}
+  cacheLocation="localstorage"
+  useRefreshTokens={true}
 >
   <AuthButtons></AuthButtons>
 
