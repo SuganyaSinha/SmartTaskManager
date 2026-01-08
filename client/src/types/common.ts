@@ -1,4 +1,3 @@
-
 /*export type  Task = {
     name: string;
     category: string;
@@ -21,6 +20,13 @@
 
 export type TaskPriority = "high" | "medium" | "low";
 
+export enum TaskStatus {
+  NotStarted = "NotStarted",
+  InProgress = "InProgress",
+  Completed = "Completed",
+  Blocked = "Blocked"
+}
+
 export interface NewTask {
   id?: string;  // Optional because new tasks won't have an id yet
   title: string;
@@ -28,6 +34,7 @@ export interface NewTask {
   end: Date;   // ISO 8601 date string, parsed into Date in code
   priority: string;
   comments: string;
+  status: TaskStatus;
 }
 
 export interface Day {

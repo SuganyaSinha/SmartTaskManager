@@ -1,4 +1,4 @@
-public class OpenAiTaskItem
+public class OpenAiTaskItems
 {
     public string Title { get; set; } = string.Empty;
     public DateTime Start { get; set; }

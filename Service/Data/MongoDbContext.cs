@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using SmartTaskManager.Models;
+using SmartTaskManager.Models.Entities;
 
 namespace SmartTaskManager.Data
 {
@@ -13,7 +14,7 @@ namespace SmartTaskManager.Data
             _database = client.GetDatabase(config["MongoDB:DatabaseName"]);
         }
 
-        public IMongoCollection<TaskItem> TaskCollection => _database.GetCollection<TaskItem>("Tasks");
+        public IMongoCollection<TaskEntity> TaskCollection => _database.GetCollection<TaskEntity>("Tasks");
 
         public IMongoCollection<UserProfile> UserProfiles => _database.GetCollection<UserProfile>("UserProfiles");
 

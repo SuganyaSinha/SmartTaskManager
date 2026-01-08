@@ -89,20 +89,23 @@ export const getTasksForTheMonth = async (year : number,
     }
   };
 
-// Update task for the user
+/// Update task for the user
 // tbd not tested yet
 export const updateTask = async (taskId: string, updates: Partial<NewTask>, getAccessTokenSilently : any) => {
 
     try{
         const token = await getAccessTokenSilently();
         const response = await api.patch(
-            `/api/tasks/${taskId}`,
-            {
+            
+             `/api/tasks/${taskId}`,
+                        {
+                            id: updates.id,
                 title: updates.title,
                 start: updates.start,
                 end: updates.end,
                 priority: updates.priority,
-                comments: updates.comments
+                comments: updates.comments,
+                status: updates.status
             },
             {
                 headers: {

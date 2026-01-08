@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import tasksData from "./tasks.json";
-import { NewTask } from "../types/common";
+import { NewTask, TaskStatus } from "../types/common";
 import { useAuth0 } from "@auth0/auth0-react";
 import { postUserInput } from '../services/openAiService';
 import { getTasksForTheMonth, updateTask } from '../services/taskService';
@@ -19,9 +19,14 @@ const TaskScheduler = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedTask, setSelectedTask] = useState<NewTask | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { getAccessTokenSilently } = useAuth0();
+
+  const selectedTask = useMemo(
+    () => events.find(e => e.id === selectedTaskId) || null,
+    [events, selectedTaskId]
+  );
 
       // Get user tasks for the current month
       const getTasksForTheSelectedMonth = useCallback (async (date : Date) => {
@@ -32,13 +37,14 @@ const TaskScheduler = () => {
             const response = await getTasksForTheMonth( year, month, getAccessTokenSilently);
             console.log("API Response:", response);
             const formattedEvents = response.map(task => ({
-                id: task.id, // <-- Add this line
-                title: task.title,
-                start: new Date(task.start),
-                end: new Date(task.end),
-                priority: task.priority,
-                comments: task.comments,
-              }));
+              id: task.id,
+              title: task.title,
+              start: new Date(task.start),
+              end: new Date(task.end),
+              priority: task.priority,
+              comments: task.comments,
+              status: task.status as TaskStatus,
+            }));
               setEvents(formattedEvents);
         }
         catch(err)
@@ -54,6 +60,8 @@ const TaskScheduler = () => {
   useEffect(() => {
     getTasksForTheSelectedMonth(currentDate);
   }, [getTasksForTheSelectedMonth, currentDate]);
+
+
 
     // Calculate total hours per day
     const totalHoursPerDay = events.reduce((acc : { [key: string]: number }, event : NewTask) => {
@@ -74,12 +82,13 @@ const TaskScheduler = () => {
 
       const addTasksFromApi = (apiTasks: NewTask[]) => {
         const formattedApiTasks = apiTasks.map(task => ({
-          id: task.id, // <-- Add this line
+          id: task.id,
           title: task.title,
           start: new Date(task.start),
           end: new Date(task.end),
           priority: task.priority,
           comments: task.comments,
+          status: task.status as TaskStatus,
         }));
       
         setEvents(prevEvents => {
@@ -95,9 +104,10 @@ const TaskScheduler = () => {
       };
 
   const handleSelectEvent = (event: NewTask) => {
-    setSelectedTask(event);
+    setSelectedTaskId(event.id ?? null);
     setIsModalOpen(true);
   };
+
   const handleUpdateTask = async (updatedTask: NewTask) => {
     try {
       if (!selectedTask?.id) {
@@ -105,18 +115,21 @@ const TaskScheduler = () => {
       }
       const apiResponse = await updateTask(selectedTask.id, updatedTask, getAccessTokenSilently);
       // Update local state using the response from the API and match by id
-      setEvents(events.map(event => 
-        event.id === apiResponse.id
-          ? {
-              ...event,
-              ...apiResponse,
-              start: new Date(apiResponse.start),
-              end: new Date(apiResponse.end),
-            }
-          : event
-      ));
+      const updatedEvent: NewTask = {
+        ...apiResponse,
+        start: new Date(apiResponse.start),
+        end: new Date(apiResponse.end),
+        status: apiResponse.status as TaskStatus,
+      };
+
+            setEvents(prev =>
+        prev.map(event =>
+          event.id === updatedEvent.id ? updatedEvent : event
+        )
+      );
+
       setIsModalOpen(false);
-      setSelectedTask(null);
+      setSelectedTaskId(null);
     } catch (err) {
       console.error('Failed to update task:', err);
       setError('Failed to update task. Please try again.');
@@ -125,7 +138,7 @@ const TaskScheduler = () => {
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setSelectedTask(null);
+    setSelectedTaskId(null);
   };
 
       const handleUserSubmit = async () => {

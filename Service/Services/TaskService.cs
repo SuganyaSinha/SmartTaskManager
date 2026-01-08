@@ -1,6 +1,5 @@
 using MongoDB.Driver;
-using SmartTaskManager.Models;
-using TaskManagerApi.Data;
+using SmartTaskManager.Models.DTO;
 using Microsoft.Extensions.Options;
 using SmartTaskManager.Interfaces;
 using SmartTaskManager.Repositary;
@@ -31,7 +30,7 @@ namespace SmartTaskManager.Services
             return await _taskRepositary.GetTaskByIdAsync(id);
         }
 
-        public async Task<TaskItem> CreateTaskAsync(string userId, TaskItem task) 
+        public async Task<TaskItem> CreateTaskAsync(string userId, CreateTaskItem task) 
         {
             return await _taskRepositary.CreateTaskAsync(task, userId);
         }
@@ -46,7 +45,7 @@ namespace SmartTaskManager.Services
             return await _taskRepositary.DeleteTaskAsync(id, userId);
         }
 
-        public async Task<TaskItem> PatchTaskAsync(string id, string userId, TaskUpdateDto taskUpdate)
+        public async Task<TaskItem> PatchTaskAsync(string id, string userId, TaskItem taskUpdate)
         {
             var existingTask = await _taskRepositary.GetTaskByIdAsync(id);
             if (existingTask == null || existingTask.UserId != userId)
@@ -54,13 +53,7 @@ namespace SmartTaskManager.Services
                 throw new KeyNotFoundException("Task not found or unauthorized");
             }
 
-            if (taskUpdate.Title != null) existingTask.Title = taskUpdate.Title;
-            if (taskUpdate.Start.HasValue) existingTask.Start = taskUpdate.Start.Value;
-            if (taskUpdate.End.HasValue) existingTask.End = taskUpdate.End.Value;
-            if (taskUpdate.Priority != null) existingTask.Priority = taskUpdate.Priority;
-            if (taskUpdate.Comments != null) existingTask.Comments = taskUpdate.Comments;
-
-            return await _taskRepositary.UpdateTaskAsync(id, userId, existingTask);
+            return await _taskRepositary.UpdateTaskAsync(id, userId, taskUpdate);            
         }
     }
 }

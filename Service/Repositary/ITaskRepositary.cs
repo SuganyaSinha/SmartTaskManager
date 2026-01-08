@@ -1,4 +1,4 @@
-using SmartTaskManager.Models;
+using SmartTaskManager.Models.DTO;
 
 namespace SmartTaskManager.Repositary
 {
@@ -7,7 +7,7 @@ namespace SmartTaskManager.Repositary
         Task<List<TaskItem>> GetAllTasksAsync(string userId);
         Task<List<TaskItem>> GetTasksByMonthAsync(string userId, int year, int month);
         Task<TaskItem?> GetTaskByIdAsync(string id);  
-        Task<TaskItem> CreateTaskAsync(TaskItem task, string userId);
+        Task<TaskItem> CreateTaskAsync(CreateTaskItem task, string userId);
         Task<TaskItem> UpdateTaskAsync(string id, string userId, TaskItem task);
         Task<bool> DeleteTaskAsync(string id, string userId);
     }

@@ -1,9 +1,9 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace SmartTaskManager.Models
+namespace SmartTaskManager.Models.Entities
 {
-    public class TaskItem
+    public class TaskEntity
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
@@ -13,10 +13,10 @@ namespace SmartTaskManager.Models
         public string Title { get; set; } = string.Empty;
 
         [BsonElement("start")]
-        public DateTime Start { get; set; }
+        public DateTime? Start { get; set; } = null;
 
         [BsonElement("end")]
-        public DateTime End { get; set; }
+        public DateTime? End { get; set; } = null;
 
         [BsonElement("priority")]
         public string Priority { get; set; } = string.Empty;
@@ -30,6 +30,14 @@ namespace SmartTaskManager.Models
         [BsonElement("status")]
         [BsonRepresentation(BsonType.String)]   
         public TaskStatus Status { get; set; } = TaskStatus.NotStarted;
+    }
+
+        public enum TaskStatus
+    {
+        NotStarted,
+        InProgress,
+        Completed,
+        Blocked
     }
 
 }

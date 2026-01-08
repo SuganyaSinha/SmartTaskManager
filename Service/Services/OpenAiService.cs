@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using SmartTaskManager.Repositary;
+using SmartTaskManager.Models.DTO;
 
 public class OpenAiService
 {
@@ -155,11 +156,11 @@ Now, generate tasks based on these instructions and return only a valid JSON arr
 
         var tasksForOpenAi = tasks.Select(t => new OpenAiTaskItem
         {
-            Title = t.Title,
+            Title = t.Title ?? string.Empty,
             Start = t.Start,
             End = t.End,
-            Priority = t.Priority,
-            Comments = t.Comments
+            Priority = t.Priority ?? string.Empty,
+            Comments = t.Comments ?? string.Empty
         }).ToList();
 
         string jsonString = JsonSerializer.Serialize(

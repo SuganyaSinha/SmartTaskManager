@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using SmartTaskManager.Models;
+using SmartTaskManager.Models.DTO;
 using SmartTaskManager.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -50,7 +50,7 @@ namespace TaskManagerApi.Controllers
 
         //[Authorize]
         [HttpPost]
-        public async Task<ActionResult<TaskItem>> CreateTask([FromBody]TaskItem task)
+        public async Task<ActionResult<TaskItem>> CreateTask([FromBody]CreateTaskItem task)
         {
             var createdTask = await _taskService.CreateTaskAsync(GetUserId(), task);
             return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
@@ -66,7 +66,7 @@ namespace TaskManagerApi.Controllers
 
         //[Authorize]
         [HttpPatch("{id}")]
-        public async Task<ActionResult<TaskItem>> PatchTask(string id, [FromBody]TaskUpdateDto taskUpdate)
+        public async Task<ActionResult<TaskItem>> PatchTask(string id, [FromBody]TaskItem taskUpdate)
         {
             try
             {
