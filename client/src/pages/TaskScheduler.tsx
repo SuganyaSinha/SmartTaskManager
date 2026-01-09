@@ -71,12 +71,28 @@ const TaskScheduler = () => {
         return acc;
       }, {});
 
+      const getStatusColor = (status: TaskStatus) => {
+        switch (status) {
+          case TaskStatus.Completed:
+            return "#90EE90"; // Light green
+          case TaskStatus.InProgress:
+            return "#87CEEB"; // Sky blue
+          case TaskStatus.NotStarted:
+            return "#FFE4B5"; // Moccasin (light peach)
+          case TaskStatus.Blocked:
+            return "#FFB6C1"; // Light pink
+          default:
+            return "#D3D3D3"; // Light gray
+        }
+      };
+
       const eventStyleGetter = (event : NewTask) => {
-        const day = moment(event.start).format("YYYY-MM-DD");
-        const totalHours = totalHoursPerDay[day] || 0;
-        const backgroundColor = totalHours > 5 ? "#ffcccc" : "blue"; // Light red if overloaded
+        //const day = moment(event.start).format("YYYY-MM-DD");
+        //const totalHours = totalHoursPerDay[day] || 0;
+        //const backgroundColor = totalHours > 5 ? "#ffcccc" : "blue"; // Light red if overloaded
+        const backgroundColor = getStatusColor(event.status);
         return {
-          style: { backgroundColor, color: "white" }
+          style: { backgroundColor, color: "#333" }
         };
       };
 
