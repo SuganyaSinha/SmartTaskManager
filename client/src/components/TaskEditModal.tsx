@@ -5,10 +5,11 @@ interface TaskEditModalProps {
   task: NewTask | null;
   onClose: () => void;
   onSave: (updatedTask: NewTask) => void;
+  onDelete?: (taskId: string) => void;
   isOpen: boolean;
 }
 
-const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, isOpen }) => {
+const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, onDelete, isOpen }) => {
   const [editedTask, setEditedTask] = useState<NewTask | null>(task);
 
   if (!isOpen || !editedTask) return null;
@@ -16,6 +17,13 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, is
   const handleSave = () => {
     if (editedTask) {
       onSave(editedTask);
+      onClose();
+    }
+  };
+
+  const handleDelete = () => {
+    if (editedTask?.id && onDelete) {
+      onDelete(editedTask.id);
       onClose();
     }
   };
@@ -113,19 +121,29 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, is
             rows={3}
           />
         </div>
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Save
-          </button>
+        <div className="flex justify-between items-center">
+          {onDelete && (
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              Delete
+            </button>
+          )}
+          <div className="flex space-x-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>

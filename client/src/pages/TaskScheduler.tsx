@@ -6,7 +6,7 @@ import tasksData from "./tasks.json";
 import { NewTask, TaskStatus } from "../types/common";
 import { useAuth0 } from "@auth0/auth0-react";
 import { postUserInput } from '../services/openAiService';
-import { getTasksForTheMonth, updateTask } from '../services/taskService';
+import { getTasksForTheMonth, updateTask, deleteTask } from '../services/taskService';
 import AudioInput from "./AudioInput";
 import TaskEditModal from "../components/TaskEditModal";
 
@@ -141,6 +141,19 @@ const TaskScheduler = () => {
     setSelectedTaskId(null);
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const response = await deleteTask(taskId, getAccessTokenSilently);
+      console.log("API Response for deleting task:", response);
+      setEvents(prev => prev.filter(event => event.id !== taskId));
+      setIsModalOpen(false);
+      setSelectedTaskId(null);
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+      setError('Failed to delete task. Please try again.');
+    }
+  };
+
       const handleUserSubmit = async () => {
         if (!userInput.trim()) return;
 
@@ -217,6 +230,7 @@ const TaskScheduler = () => {
           onClose={handleCloseModal} 
           task={selectedTask} 
           onSave={handleUpdateTask}
+          onDelete={handleDeleteTask}
         />
       )}
     </div>

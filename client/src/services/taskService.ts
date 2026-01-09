@@ -61,7 +61,6 @@ export const getTasksForTheMonth = async (year : number,
   };
 
 // Create task for the user
-// tbd not tested yet
   export const createTask = async (task : NewTask, getAccessTokenSilently : any) => {
 
     try{
@@ -90,7 +89,6 @@ export const getTasksForTheMonth = async (year : number,
   };
 
 /// Update task for the user
-// tbd not tested yet
 export const updateTask = async (taskId: string, updates: Partial<NewTask>, getAccessTokenSilently : any) => {
 
     try{
@@ -137,7 +135,7 @@ export const deleteTask = async (taskId: string, getAccessTokenSilently : any) =
     try{
         const token = await getAccessTokenSilently();
         const response = await api.delete(
-            '`/tasks/${taskId}`',
+            `/api/tasks/${taskId}`,
             {
                 headers: {
                     'Content-Type': 'application/json', 
@@ -146,7 +144,6 @@ export const deleteTask = async (taskId: string, getAccessTokenSilently : any) =
             }
             );
     
-        const test = JSON.parse(response.data.response);
         return response.data;
     }
     catch(error)
