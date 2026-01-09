@@ -9,6 +9,7 @@ import { postUserInput } from '../services/openAiService';
 import { getTasksForTheMonth, updateTask, deleteTask } from '../services/taskService';
 import AudioInput from "./AudioInput";
 import TaskEditModal from "../components/TaskEditModal";
+import './TaskScheduler.css';
 
 const localizer = momentLocalizer(moment);
 

@@ -1,0 +1,18 @@
+/* Hide time display in day view - show only title */
+.rbc-day-slot .rbc-time-slot ~ .rbc-event-label {
+  display: none;
+}
+
+.rbc-day-slot .rbc-event-content {
+  font-size: 0.9em;
+  padding: 2px 4px;
+}
+
+/* Make event content minimal */
+.rbc-event-label {
+  display: none !important;
+}
+
+.rbc-show-more {
+  display: none !important;
+}
