@@ -14,6 +14,26 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, on
 
   if (!isOpen || !editedTask) return null;
 
+  // Convert UTC date to local timezone format for datetime-local input
+  const formatToLocalDateTime = (date: Date | string): string => {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    
+    // Get local timezone offset in milliseconds
+    const offset = d.getTimezoneOffset() * 60000;
+    // Adjust date to local time
+    const localDate = new Date(d.getTime() - offset);
+    // Format as datetime-local expects (YYYY-MM-DDTHH:mm)
+    return localDate.toISOString().slice(0, 16);
+  };
+
+  // Convert local datetime input back to UTC Date object for storage
+  const formatToUTC = (localDateTime: string): Date => {
+    if (!localDateTime) return new Date();
+    const d = new Date(localDateTime);
+    return d;
+  };
+
   const handleSave = () => {
     if (editedTask) {
       onSave(editedTask);
@@ -84,13 +104,9 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, on
             <label className="block text-sm font-medium text-gray-700">Start Date/Time</label>
             <input
               type="datetime-local"
-              value={
-                editedTask.start && !isNaN(new Date(editedTask.start).getTime())
-                  ? new Date(editedTask.start).toISOString().slice(0, 16)
-                  : ''
-              }
+              value={formatToLocalDateTime(editedTask.start)}
               onChange={e => {
-                setEditedTask({ ...editedTask, start: e.target.value ? new Date(e.target.value) : editedTask.start });
+                setEditedTask({ ...editedTask, start: e.target.value ? formatToUTC(e.target.value) : editedTask.start });
               }}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
             />
@@ -99,13 +115,9 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, on
             <label className="block text-sm font-medium text-gray-700">End Date/Time</label>
             <input
               type="datetime-local"
-              value={
-                editedTask.end && !isNaN(new Date(editedTask.end).getTime())
-                  ? new Date(editedTask.end).toISOString().slice(0, 16)
-                  : ''
-              }
+              value={formatToLocalDateTime(editedTask.end)}
               onChange={e => {
-                setEditedTask({ ...editedTask, end: e.target.value ? new Date(e.target.value) : editedTask.end });
+                setEditedTask({ ...editedTask, end: e.target.value ? formatToUTC(e.target.value) : editedTask.end });
               }}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
             />
