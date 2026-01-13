@@ -217,6 +217,7 @@ const TaskScheduler = () => {
         <div>
               {error && <div style={{ color: 'red' }}>{error}</div>}
         </div>
+
       </div>
       <div style={{ width: "80%" }}>
         <Calendar
