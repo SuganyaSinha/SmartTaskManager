@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import tasksData from "./tasks.json";
@@ -14,12 +15,16 @@ import './TaskScheduler.css';
 const localizer = momentLocalizer(moment);
 
 const TaskScheduler = () => {
-  const [view, setView] = useState<"day" | "week" | "month" | "work_week" | "agenda">("month");
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialView = (searchParams.get('view') as "day" | "week" | "month" | "work_week" | "agenda") || "month";
+  const initialDate = searchParams.get('date') ? new Date(searchParams.get('date')!) : new Date();
+  const [view, setView] = useState<"day" | "week" | "month" | "work_week" | "agenda">(initialView);
   const [events, setEvents] = useState<NewTask[]>([]);
   const [userInput, setUserInput] = useState("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(initialDate);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { getAccessTokenSilently } = useAuth0();
@@ -238,6 +243,10 @@ const TaskScheduler = () => {
             if (view === "month") {
               setCurrentDate(slotInfo.start);
               setView("day");
+            } else if (view === "week" || view === "day") {
+              const selectedDate = moment(slotInfo.start).format("YYYY-MM-DD");
+              const selectedTime = moment(slotInfo.start).format("HH:mm");
+              navigate(`/newtask?date=${selectedDate}&time=${selectedTime}&view=${view}`);
             }
           }}
         />

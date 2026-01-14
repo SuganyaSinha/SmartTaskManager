@@ -66,13 +66,9 @@ const NavBar = () => {
           <h2>Hi {user?.name}!</h2>
                       <div>
               <table>
-                <tr>
-                  <td><Link to="/">Home</Link></td>
-                  <td></td>
-                  <td><Link to="/NewTask">Add new task</Link></td>
-                  <td></td>
-                  <td><Link to="/Calendar">Calendar view</Link></td>
-                  </tr>
+                  <tr><td><Link to="/">Home</Link></td></tr>
+                  <tr><td><Link to="/NewTask">Add new task</Link></td></tr>
+                  <tr><td><Link to="/Calendar">Calendar view</Link></td></tr>
               </table>
             </div>
 
