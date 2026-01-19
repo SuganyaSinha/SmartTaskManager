@@ -11,6 +11,7 @@ interface TaskEditModalProps {
 
 const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, onDelete, isOpen }) => {
   const [editedTask, setEditedTask] = useState<NewTask | null>(task);
+  const [timeError, setTimeError] = useState<string>('');
 
   if (!isOpen || !editedTask) return null;
 
@@ -34,11 +35,25 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, on
     return d;
   };
 
+  const validateTimes = (start?: Date, end?: Date) => {
+  if (!start || !end) return '';
+  if (new Date(end) <= new Date(start)) {
+    return 'End time must be greater than start time';
+  }
+  return '';
+};
+
   const handleSave = () => {
-    if (editedTask) {
+      if (!editedTask) return;
+
+      const error = validateTimes(editedTask.start, editedTask.end);
+      if (error) {
+        setTimeError(error);
+        return;
+      }
+
       onSave(editedTask);
       onClose();
-    }
   };
 
   const handleDelete = () => {
@@ -106,22 +121,34 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, on
               type="datetime-local"
               value={formatToLocalDateTime(editedTask.start)}
               onChange={e => {
-                setEditedTask({ ...editedTask, start: e.target.value ? formatToUTC(e.target.value) : editedTask.start });
+                const newStart = e.target.value ? formatToUTC(e.target.value) : editedTask.start;
+                const error = validateTimes(newStart, editedTask.end);
+                setTimeError(error);
+                setEditedTask({ ...editedTask, start: newStart });
               }}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
             />
           </div>
+          
           <div className="w-1/2">
             <label className="block text-sm font-medium text-gray-700">End Date/Time</label>
             <input
               type="datetime-local"
               value={formatToLocalDateTime(editedTask.end)}
               onChange={e => {
-                setEditedTask({ ...editedTask, end: e.target.value ? formatToUTC(e.target.value) : editedTask.end });
+                const newEnd = e.target.value ? formatToUTC(e.target.value) : editedTask.end;
+                const error = validateTimes(editedTask.start, newEnd);
+                setTimeError(error);
+                setEditedTask({ ...editedTask, end: newEnd });
               }}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
             />
           </div>
+        </div>
+        <div>
+{timeError && (
+  <p className="text-red-500 text-sm mt-1">{timeError}</p>
+)}
         </div>
         {/* Comments */}
         <div className="mb-4">

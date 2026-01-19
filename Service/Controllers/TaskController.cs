@@ -33,6 +33,14 @@ namespace TaskManagerApi.Controllers
             return Ok(tasks);
         }
 
+        [HttpGet("test")]
+        public async Task<ActionResult<List<TaskItem>>> GetTasks([FromQuery] TaskFilterRequest filter)
+        {
+            var userId = GetUserId();
+            var tasks = await _taskService.GetTasksAsync(userId, filter);
+            return Ok(tasks);
+        }
+
         [HttpGet("month/{year}/{month}")]
         public async Task<ActionResult<List<TaskItem>>> GetTasksByMonth(int year, int month)
         {
@@ -88,7 +96,7 @@ namespace TaskManagerApi.Controllers
             {
                 return NotFound();
             }
-            return NoContent();     
+            return NoContent();
         }
     }
 }

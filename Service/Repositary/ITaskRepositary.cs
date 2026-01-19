@@ -5,6 +5,7 @@ namespace SmartTaskManager.Repositary
     public interface ITaskRepository
     {
         Task<List<TaskItem>> GetAllTasksAsync(string userId);
+        Task<List<TaskItem>> GetTasksAsync(string userId, TaskFilterRequest filter);
         Task<List<TaskItem>> GetTasksByMonthAsync(string userId, int year, int month);
         Task<TaskItem?> GetTaskByIdAsync(string id);  
         Task<TaskItem> CreateTaskAsync(CreateTaskItem task, string userId);

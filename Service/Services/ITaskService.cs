@@ -5,6 +5,7 @@ namespace SmartTaskManager.Interfaces
     public interface ITaskService
     {
         Task<List<TaskItem>> GetAllTasksAsync(string UserId);
+        Task<List<TaskItem>> GetTasksAsync(string UserId, TaskFilterRequest filter);
         Task<List<TaskItem>> GetTasksByMonthAsync(string userId, int year, int month);
         Task<TaskItem?> GetTaskByIdAsync(string id);
         Task<TaskItem> CreateTaskAsync(string userId, CreateTaskItem task);        Task<TaskItem> UpdateTaskAsync(string id, string userId, TaskItem task);

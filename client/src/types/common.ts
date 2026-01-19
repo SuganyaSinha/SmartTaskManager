@@ -54,3 +54,11 @@ export interface UserProfile {
   routine: string;
   personality: string;
 }
+
+export interface TaskFilter {
+  status?: TaskStatus;
+  title?: string;
+  start?: Date;
+  end?: Date;
+  priority?: number;
+}

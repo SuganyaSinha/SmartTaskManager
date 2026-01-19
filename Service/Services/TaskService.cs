@@ -20,6 +20,11 @@ namespace SmartTaskManager.Services
             return await _taskRepositary.GetAllTasksAsync(userId);
         }
 
+        public async Task<List<TaskItem>> GetTasksAsync(string userId, TaskFilterRequest filter)
+        {
+            return await _taskRepositary.GetTasksAsync(userId, filter);
+        }   
+
         public async Task<List<TaskItem>> GetTasksByMonthAsync(string userId, int year, int month)
         {
             return await _taskRepositary.GetTasksByMonthAsync(userId, year, month);

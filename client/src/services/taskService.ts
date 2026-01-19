@@ -1,5 +1,5 @@
 import api from "./api"
-import { NewTask } from '../types/common';
+import { NewTask, TaskFilter } from '../types/common';
 import { GetTokenSilentlyOptions } from "@auth0/auth0-react";
 import { GetTokenSilentlyVerboseResponse } from "@auth0/auth0-spa-js";
 
@@ -27,6 +27,34 @@ export const getUserTasks = async (getAccessTokenSilently: any) :
     {
         // tbd log the error
         console.error("getUserTasks API call failed:", error);
+        throw error;
+    }
+  };
+
+  export const getTasks = async (getAccessTokenSilently : any,
+                                    filter? : TaskFilter 
+                                ) : 
+                                          Promise<NewTask[]> => {
+    try{
+        const token = await getAccessTokenSilently();
+        const response = await api.get(
+            '/api/tasks/test',
+            {
+                headers: {
+                    'Content-Type': 'application/json', 
+                     Authorization: `Bearer ${token}`
+                },
+                params: filter
+            }
+            );
+    
+        const test = response.data;
+        return response.data;
+    }
+    catch(error)
+    {
+
+        console.error("getTasks API call failed:", error);
         throw error;
     }
   };

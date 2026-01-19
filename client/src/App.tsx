@@ -10,14 +10,22 @@ import TaskScheduler from './pages/TaskScheduler';
 import NotFound from './pages/NotFound';
 import NewTask from './pages/NewTask';
 import Callback from './pages/Callback';
+import TaskPage from './pages/TaskPage';
 
 const ProtectedNewTask = withAuthenticationRequired(NewTask);
 const ProtectedTaskScheduler = withAuthenticationRequired(TaskScheduler);
+const ProtectedTaskPage = withAuthenticationRequired(TaskPage);
 
 function App() {
   return (
     <>
-      <NavBar />
+
+<div style={{display: "flex"}}>
+    <div style={{width: "10%", flexBasis : ""}}>
+       <NavBar />
+    </div>
+    <div style={{width: "90%", flexBasis: "90%"}}>
+     
       <Routes>
         {/* Public route – anyone can access */}
         <Route path="/" element={<Home />} />
@@ -32,12 +40,19 @@ function App() {
           element={<ProtectedTaskScheduler />}
         />
 
+          <Route
+          path="/Task"
+          element={<ProtectedTaskPage />}
+        />
+
         {/* Optional: Handle Auth0 callback explicitly */}
         <Route path="/callback" element={<Callback />} />
 
         {/* Fallback */}
         <Route path="*" element={<div>404 - Not Found</div>} />
       </Routes>
+      </div>
+      </div>
     </>
 
 

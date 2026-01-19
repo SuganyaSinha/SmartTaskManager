@@ -29,6 +29,32 @@ namespace SmartTaskManager.Repositary
             return _mapper.Map<List<TaskItem>>(taskEntities);
         }
 
+        public async Task<List<TaskItem>> GetTasksAsync(string userId, TaskFilterRequest filter)
+        {
+            var filterBuilder = Builders<SmartTaskManager.Models.Entities.TaskEntity>.Filter;
+            var mongoFilter = filterBuilder.Eq(t => t.UserId, userId);
+
+            if (!string.IsNullOrEmpty(filter.Title))
+            {
+                mongoFilter &= filterBuilder.Regex(t => t.Title, new MongoDB.Bson.BsonRegularExpression(filter.Title, "i"));
+            }
+            if (filter.Start.HasValue)
+            {
+                mongoFilter &= filterBuilder.Gte(t => t.Start, filter.Start.Value);
+            }
+            if (filter.End.HasValue)
+            {
+                mongoFilter &= filterBuilder.Lte(t => t.End, filter.End.Value);
+            }
+            mongoFilter &= filterBuilder.Eq(t => t.Status, (SmartTaskManager.Models.Entities.TaskStatus)filter.Status);
+
+            var taskEntities = await _taskCollection
+                .Find(mongoFilter)
+                .ToListAsync();
+
+            return _mapper.Map<List<TaskItem>>(taskEntities);
+        }
+
         public async Task<List<TaskItem>> GetTasksByMonthAsync(string userId, int year, int month)
         {
             var taskEntities = await _taskCollection
