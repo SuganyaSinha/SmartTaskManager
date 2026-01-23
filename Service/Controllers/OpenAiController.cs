@@ -14,6 +14,8 @@ public class OpenAiController : ControllerBase
     private readonly OpenAiService _openAiService;
     private readonly IPromptService _promptService;
 
+    private readonly AIPlannerService _aiPlannerService;
+
     private string GetUserId()
     {
         var userId = User.FindFirst("sub")?.Value;
@@ -24,10 +26,12 @@ public class OpenAiController : ControllerBase
     }
 
     public OpenAiController( OpenAiService openAiService,
-                            IPromptService promptService )
+                            IPromptService promptService,
+                            AIPlannerService aiPlannerService)
     {
         _openAiService = openAiService;
         _promptService = promptService;
+        _aiPlannerService = aiPlannerService;
     }
 
     [Authorize]
@@ -38,9 +42,8 @@ public class OpenAiController : ControllerBase
         {
             return BadRequest("Prompt cannot be empty.");
         }
-        //var response = await _openAiService.GetResponseAsync(AppendToThePrompt(request.Prompt));
-        var response = await _openAiService.GetResponseAsync(request, GetUserId());
-
+        //var response = await _openAiService.GetResponseAsync(request, GetUserId());
+        var response = await _aiPlannerService.GenerateTaskAsync(request, GetUserId());
 
         var sub = User.FindFirst("sub")?.Value;
         if(sub != null)

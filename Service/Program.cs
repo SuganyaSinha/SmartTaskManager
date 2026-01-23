@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using AutoMapper;
 using SmartTaskManager.Utilities;
+using Microsoft.SemanticKernel;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
         options.MapInboundClaims = false;
     });
+    //System.Diagnostics.Debugger.Break();
 
 // Add Authorization (to use [Authorize] attribute)
 builder.Services.AddAuthorization();
@@ -35,17 +37,35 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpClient();
 
 builder.Services.AddSingleton<MongoDbContext>();
+builder.Services.AddSingleton<Kernel>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+
+    var apiKey = builder.Configuration["OpenAI:ApiKey"];
+    var model = builder.Configuration["OpenAI:Model"];  
+
+    var kernelBuilder = Kernel.CreateBuilder();
+
+    kernelBuilder.AddOpenAIChatCompletion(
+        modelId: model,
+        apiKey: apiKey
+    );
+
+    return kernelBuilder.Build();
+});
 
 // Register Repositaries
 builder.Services.AddScoped<ITaskRepository, TaskRepositary>();
 builder.Services.AddScoped<IPromptRepositary, PromptRepositary>();
 builder.Services.AddScoped<IUserProfileRepositary, UserProfileRepositary>();
 
+
 // Register Services
-builder.Services.AddScoped<OpenAiService>();
+builder.Services.AddScoped<OpenAiService>(); // tdb this could be singleton
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IPromptService, PromptService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<AIPlannerService>();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
@@ -57,7 +77,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowReactApp",
         builder =>
         {
-            builder.WithOrigins("http://localhost:3000") // React app URL
+            builder.WithOrigins("http://localhost:3000") // tbd need to read from configRL
                    .AllowAnyMethod()
                    .AllowAnyHeader()
                    .AllowCredentials();
@@ -85,34 +105,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowReactApp"); // Apply CORS policy
 app.UseHttpsRedirection();
 app.MapControllers();
-/*
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
-*/
 
 app.Run();
 
-/*
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
-*/
+

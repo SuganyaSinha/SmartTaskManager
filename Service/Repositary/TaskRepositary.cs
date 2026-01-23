@@ -23,7 +23,9 @@ namespace SmartTaskManager.Repositary
         public async Task<List<TaskItem>> GetAllTasksAsync(string userId)
         {
             var taskEntities = await _taskCollection
-                .Find(t => t.UserId == userId)
+                .Find(t => t.UserId == userId &&
+                           (t.Status == SmartTaskManager.Models.Entities.TaskStatus.InProgress ||
+                            t.Status == SmartTaskManager.Models.Entities.TaskStatus.NotStarted))
                 .ToListAsync();
 
             return _mapper.Map<List<TaskItem>>(taskEntities);
