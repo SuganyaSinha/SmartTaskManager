@@ -13,7 +13,7 @@ namespace SmartTaskManager.Models.DTO
         public string? Comments { get; set; }
         public string? UserId { get; set; }
 
-        [JsonConverter(typeof(JsonStringEnumConverter))]
+   
         public TaskStatus Status { get; set; } = TaskStatus.NotStarted;
     }
 }

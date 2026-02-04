@@ -51,7 +51,36 @@ public class OpenAiController : ControllerBase
             var prompt = new Prompt{UserId = sub, Text = request.UserInput, Response = response};
             await _promptService.CreatePromptAsync(prompt);
         }
-        
+
+        // var tasks = new List<CreateTaskItem>();
+
+        // if(!string.IsNullOrWhiteSpace(response))
+        // {
+        //     try
+        //     {
+        //         tasks = JsonSerializer.Deserialize<List<CreateTaskItem>>(
+        //             response,
+        //             new JsonSerializerOptions
+        //             {
+        //                 PropertyNameCaseInsensitive = true
+        //             });
+        //     }
+        //     catch (JsonException ex)
+        //     {
+        //         throw new InvalidOperationException("Invalid task format returned from AI");
+        //     }
+        // }
+
+        // if(tasks != null && tasks.Count > 0)
+        // {
+        //      TimeZoneInfo clientTimeZone = TimeZoneInfo.FindSystemTimeZoneById(request.TimeZone);
+        //     foreach(var task in tasks)
+        //     {
+        //         task.Start = task.Start.HasValue ? ConvertToUtc(task.Start.Value, clientTimeZone) : null;
+        //         task.End = task.End.HasValue ? ConvertToUtc(task.End.Value, clientTimeZone) : null;
+        //         await _taskService.CreateTaskAsync(GetUserId(), task);
+        //     }
+        // }
 
         return Ok(new { response });
     }

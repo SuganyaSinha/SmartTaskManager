@@ -37,6 +37,13 @@ namespace SmartTaskManager.Services
 
         public async Task<TaskItem> CreateTaskAsync(string userId, CreateTaskItem task) 
         {
+            if(!string.IsNullOrEmpty(task.TimeZone))
+            {
+                TimeZoneInfo clientTimeZone = TimeZoneInfo.FindSystemTimeZoneById(task.TimeZone);
+                task.Start = task.Start.HasValue ? ConvertToUtc(task.Start.Value, clientTimeZone) : null;
+                task.End = task.End.HasValue ? ConvertToUtc(task.End.Value, clientTimeZone) : null;
+            }
+
             return await _taskRepositary.CreateTaskAsync(task, userId);
         }
 
@@ -59,6 +66,21 @@ namespace SmartTaskManager.Services
             }
 
             return await _taskRepositary.UpdateTaskAsync(id, userId, taskUpdate);            
+        }
+
+        private DateTime ConvertToUtc(DateTime dateTime, TimeZoneInfo timeZone)
+        {
+            if (timeZone == null)
+            {
+                return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+            }
+            
+            DateTime localDateTime = DateTime.SpecifyKind(
+                                                    dateTime,
+                                                    DateTimeKind.Unspecified
+                                                );
+            DateTime utcDateTime =TimeZoneInfo.ConvertTimeToUtc(localDateTime, timeZone);
+            return utcDateTime;
         }
     }
 }

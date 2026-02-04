@@ -12,6 +12,7 @@ namespace SmartTaskManager.Models.DTO
         public string? Priority { get; set; }
         public string? Comments { get; set; }
         public string? UserId { get; set; }
+        public string? TimeZone { get; set; }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public TaskStatus Status { get; set; } = TaskStatus.NotStarted;

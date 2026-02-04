@@ -157,8 +157,8 @@ Now, generate tasks based on these instructions and return only a valid JSON arr
         var tasksForOpenAi = tasks.Select(t => new OpenAiTaskItem
         {
             Title = t.Title ?? string.Empty,
-            Start = t.Start,
-            End = t.End,
+            // Start = t.Start,
+            // End = t.End,
             Priority = t.Priority ?? string.Empty,
             Comments = t.Comments ?? string.Empty
         }).ToList();
@@ -220,7 +220,7 @@ Now, generate tasks based on these instructions with current date ""[currentDate
     {
         string currentDate = userInput.CurrentDate;
         int currentYear = DateTime.UtcNow.Year;
-        var existingTasks = await GetExistingTasksForTheUser(userId);
+        var existingTasks = "";//= await GetExistingTasksForTheUser(userId);
         var initialSystemPrompt = GetInitialSystemPrompt(userId);
         initialSystemPrompt = initialSystemPrompt.Replace("[INSERT_EXISTING_TASKS_HERE]", existingTasks)
                                                  .Replace("[currentDate]", currentDate);

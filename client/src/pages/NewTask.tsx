@@ -62,12 +62,12 @@ function NewTask() {
             minute: '2-digit', 
             timeZone: userTimezone 
           });
-          finalInput += ` - user preferred task time: ${taskDate} at ${timeString} (${userTimezone})`;
+          finalInput += ` - Schedule the task for: ${taskDate} at ${timeString}`;
         } else if (taskDate) {
-          finalInput += ` - user preferred task time: ${taskDate}`;
+          finalInput += ` - Schedule the task for: ${taskDate}`;
         } else if (taskTime) {
           const timeString = taskTime;
-          finalInput += ` - user preferred task time: ${timeString} (${userTimezone})`;
+          finalInput += ` - Schedule the task for: ${timeString}`;
         }
       }
 

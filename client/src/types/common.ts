@@ -35,6 +35,7 @@ export interface NewTask {
   priority: string;
   comments: string;
   status: TaskStatus;
+  timezone?: string;
 }
 
 export interface Day {

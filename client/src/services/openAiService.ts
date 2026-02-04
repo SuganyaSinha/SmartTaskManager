@@ -10,13 +10,15 @@ export const postUserInput = async (input: string, getAccessTokenSilently: { (op
     
     // Get response from openai api
     const currentDate = moment().format('YYYY-MM-DDTHH:mm:ssZ'); 
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     
     const token = await getAccessTokenSilently();
     const response = await api.post(
         '/api/openai/ask',
         {
           userInput: input,
-          currentDate: currentDate, // Pass user's local time
+          currentDate: currentDate, 
+          timeZone: timeZone // Pass user's local time
         },
         {
             headers: {
@@ -25,7 +27,7 @@ export const postUserInput = async (input: string, getAccessTokenSilently: { (op
             },
         }
     );
-    const openAiTasks:NewTask[] = JSON.parse(response.data.response);
+   const openAiTasks:NewTask[] = JSON.parse(response.data.response);
 
       /*Transform OpenAI tasks into TaskItem format and create them
       const taskItems = openAiTasks.map(task=> ({
@@ -40,7 +42,10 @@ export const postUserInput = async (input: string, getAccessTokenSilently: { (op
       */
 
       const results = await Promise.all(
-        openAiTasks.map(task => createTask(task, getAccessTokenSilently))
+        openAiTasks.map(task => createTask({
+        ...task,
+        timezone: timeZone
+      }, getAccessTokenSilently))
       );
   /*
       const createdTasks: NewTask[] = results

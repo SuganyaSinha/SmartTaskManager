@@ -1,7 +1,10 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
+using MongoDB.Driver.Core.Events;
+using MongoDB.Driver.Linq;
 using SmartTaskManager.Models.DTO;
 using SmartTaskManager.Repositary;
 
@@ -21,13 +24,15 @@ public class AIPlannerService
     public async Task<string> GenerateTaskAsync(OpenAiRequestBody input, string userId)
     {
         var chatCompletionService  = _kernel.GetRequiredService<IChatCompletionService>();
-        string existingTasksJson = await GetExistingTasksForTheUser(userId);
+        string existingTasksJson = await GetExistingTasksForTheUser(userId, input.TimeZone);
+        
 
         var chatHistory = new ChatHistory();
         chatHistory.AddSystemMessage(GetInitialSystemPrompt()
-                                    .Replace("[INSERT_EXISTING_TASKS_HERE]", existingTasksJson).Replace("[currentDate]", input.CurrentDate));
-                                   // );
-
+                                    .Replace("[INSERT_EXISTING_TASKS_HERE]", existingTasksJson)
+                                    .Replace("[currentDate]", input.CurrentDate)
+                                    .Replace("[currentTimeZone]", input.TimeZone)
+                                    );
 
         chatHistory.AddUserMessage(input.UserInput);
 
@@ -57,28 +62,25 @@ public class AIPlannerService
         1. Each task should include the following fields:
         - **title**: Name of the task.
         - **day**: Day of the week (e.g., ""Monday"") based on the LOCAL date of the task.
-        - **start**: Start time in ISO 8601 UTC format with 'Z' suffix (e.g., ""2025-03-21T22:00:00Z""). This MUST be the UTC time, not local time.
-        - **end**: End time in ISO 8601 UTC format with 'Z' suffix (e.g., ""2025-03-21T23:00:00Z""). This MUST be the UTC time, not local time.
+        - **start**: Start time in LOCAL time (ISO-like format: ""YYYY-MM-DDTHH:mm"")
+        - **end**: End time in LOCAL time (ISO-like format: ""YYYY-MM-DDTHH:mm"")
         - **priority**: Task priority (high, medium, low).
         - **comments**: Short description of the task.
 
-        2. **Date Interpretation Rules**:
-        - User's current local date and time: ""[currentDate]"" (e.g., ""2025-03-25T19:50:18-07:00"" for PDT).
-        - While converting Start time to UTC, if it is falling into next day, change the start date also to next date.
-        - While converting End time to UTC, if it is rolling into next day, change the end date also to next date.
-
-        3. **Existing Schedule Context**:
+    
+        2. **Existing Schedule Context**:
         - The user has the following pre-existing tasks (read-only, do not modify or reschedule these):
             [INSERT_EXISTING_TASKS_HERE]
         - Consider the time slots occupied by these existing tasks when scheduling new tasks. Avoid overlapping with existing tasks and ensure the user's total daily load (existing + new tasks) does not exceed 8 hours per day.
 
-        4. **Scheduling Rules for New Tasks**:
+        3. **Scheduling Rules for New Tasks**:
         - Only schedule new tasks based on the user's latest input. Do not alter, delete, or reschedule any existing tasks from the context.
         - If time is given (e.g., ""6-7""), interpret as local time (e.g., 6 PM to 7 PM).
+        - NEVER schedule tasks in the past relative to the user's current local datetime.
         - Schedule new tasks around the existing tasks, leaving at least a 30-minute break between tasks (existing or new).
         - If the user's daily load (existing + new tasks) would exceed 8 hours, prioritize scheduling new tasks on a different day or reduce the scope (e.g., shorten duration) with a comment explaining the adjustment.
 
-        5. **Formatting Requirements**:
+        4. **Formatting Requirements**:
         - Return only valid JSON as a compact array on a single line.
         - Do not include any explanations, extra text, newlines (`\n`), indentation, or additional whitespace.
         - Do not enclose the JSON in quotes or use any escape characters (e.g., `\r\n`, `\n`).
@@ -86,22 +88,31 @@ public class AIPlannerService
         - Output must be a raw, unescaped JSON array that can be directly parsed.
 
         ## Example Output (Strict JSON Format):
-        [{""title"":""Do yoga"",""day"":""Wednesday"",""start"":""2025-03-27T00:00:00Z"",""end"":""2025-03-27T00:30:00Z"",""priority"":""medium"",""comments"":""Do yoga on Wednesday at 5 PM.""}]
+        [{""title"":""Do yoga"",""day"":""Wednesday"",""start"":""2026-01-28T17:00"",""end"":""2026-01-28T18:00"",""priority"":""medium"",""comments"":""Do yoga on Wednesday at 5 PM.""}]
 
-        Now, generate tasks based on these instructions with current date ""[currentDate]"" and return only a valid JSON array without extra formatting.
+        Now, generate tasks based on these instructions with current date ""[currentDate]"" and users current timezone as ""[currentTimeZone]"" and return only a valid JSON array without extra formatting.
         ";
 
     }
 
-    private async Task<string> GetExistingTasksForTheUser(string userId)
+    private async Task<string> GetExistingTasksForTheUser(string userId, string userTimeZone)
     {
         var tasks = await _taskRepositary.GetAllTasksAsync(userId);
+     
+        TimeZoneInfo? userLocalTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZone);
 
         var tasksForOpenAi = tasks.Select(t => new OpenAiTaskItem
         {
+    
             Title = t.Title ?? string.Empty,
-            Start = t.Start,
-            End = t.End,
+            Start = t.Start.HasValue ? TimeZoneInfo.ConvertTimeFromUtc( // convert to user's local time
+                                       DateTime.SpecifyKind(t.Start.Value, DateTimeKind.Utc), //get utc time from db
+                                       userLocalTimeZone // user's local timezone
+                                       ).ToString("yyyy-MM-ddTHH:mm:ss") : string.Empty, // return empty string if null
+            End = t.End.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(
+                                   DateTime.SpecifyKind(t.End.Value, DateTimeKind.Utc),
+                                   userLocalTimeZone
+                                   ).ToString("yyyy-MM-ddTHH:mm:ss") : string.Empty,
             Status = t.Status,
             Priority = t.Priority ?? string.Empty,
             Comments = t.Comments ?? string.Empty

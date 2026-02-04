@@ -18,7 +18,13 @@ const TaskScheduler = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialView = (searchParams.get('view') as "day" | "week" | "month" | "work_week" | "agenda") || "month";
-  const initialDate = searchParams.get('date') ? new Date(searchParams.get('date')!) : new Date();
+  const dateParam = searchParams.get('date');
+  const initialDate = dateParam
+  ? (() => {
+      const [year, month, day] = dateParam.split('-').map(Number);
+      return new Date(year, month - 1, day); // local midnight
+    })()
+  : new Date();
   const [view, setView] = useState<"day" | "week" | "month" | "work_week" | "agenda">(initialView);
   const [events, setEvents] = useState<NewTask[]>([]);
   const [userInput, setUserInput] = useState("");
