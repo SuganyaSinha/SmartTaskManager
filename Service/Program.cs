@@ -58,6 +58,7 @@ builder.Services.AddSingleton<Kernel>(sp =>
 builder.Services.AddScoped<ITaskRepository, TaskRepositary>();
 builder.Services.AddScoped<IPromptRepositary, PromptRepositary>();
 builder.Services.AddScoped<IUserProfileRepositary, UserProfileRepositary>();
+builder.Services.AddScoped<IUserRoutineRepositary, UserRoutineRepositary>();
 
 
 // Register Services
@@ -65,6 +66,7 @@ builder.Services.AddScoped<OpenAiService>(); // tdb this could be singleton
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IPromptService, PromptService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<IUserRoutineService, UserRoutineService>();
 builder.Services.AddScoped<AIPlannerService>();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));

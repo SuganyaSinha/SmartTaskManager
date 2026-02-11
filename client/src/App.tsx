@@ -11,10 +11,12 @@ import NotFound from './pages/NotFound';
 import NewTask from './pages/NewTask';
 import Callback from './pages/Callback';
 import TaskPage from './pages/TaskPage';
+import {UserRoutine} from './pages/UserRoutine';
 
 const ProtectedNewTask = withAuthenticationRequired(NewTask);
 const ProtectedTaskScheduler = withAuthenticationRequired(TaskScheduler);
 const ProtectedTaskPage = withAuthenticationRequired(TaskPage);
+const ProtectedUserRoutine = withAuthenticationRequired(UserRoutine);
 
 function App() {
   return (
@@ -31,6 +33,10 @@ function App() {
         <Route path="/" element={<Home />} />
 
         {/* Protected routes – require login */}
+        <Route
+          path="/UserRoutine"
+          element={<ProtectedUserRoutine />}
+        />
         <Route
           path="/NewTask"
           element={<ProtectedNewTask />}
