@@ -14,22 +14,28 @@ public class AIPlannerService
     private readonly Kernel _kernel;
     private readonly ITaskRepository _taskRepositary;
 
+    private readonly IUserRoutineRepositary _userRoutineRepositary;
+
     public AIPlannerService(Kernel kernel,
-                            ITaskRepository taskRepositary)
+                            ITaskRepository taskRepositary,
+                            IUserRoutineRepositary userRoutineRepositary)
     {
         _kernel = kernel;
         _taskRepositary = taskRepositary;
+        _userRoutineRepositary = userRoutineRepositary;
     }
 
     public async Task<string> GenerateTaskAsync(OpenAiRequestBody input, string userId)
     {
         var chatCompletionService  = _kernel.GetRequiredService<IChatCompletionService>();
         string existingTasksJson = await GetExistingTasksForTheUser(userId, input.TimeZone);
+        string routineSummary = await GetUserRoutine(userId);
         
 
         var chatHistory = new ChatHistory();
         chatHistory.AddSystemMessage(GetInitialSystemPrompt()
                                     .Replace("[INSERT_EXISTING_TASKS_HERE]", existingTasksJson)
+                                    .Replace("[INSERT_ROUTINE_SUMMARY_HERE]", routineSummary)
                                     .Replace("[currentDate]", input.CurrentDate)
                                     .Replace("[currentTimeZone]", input.TimeZone)
                                     );
@@ -67,6 +73,8 @@ public class AIPlannerService
         - **priority**: Task priority (high, medium, low).
         - **comments**: Short description of the task.
 
+        2. **User's routine profile and preferences**
+        [INSERT_ROUTINE_SUMMARY_HERE]
     
         2. **Existing Schedule Context**:
         - The user has the following pre-existing tasks (read-only, do not modify or reschedule these):
@@ -92,6 +100,77 @@ public class AIPlannerService
 
         Now, generate tasks based on these instructions with current date ""[currentDate]"" and users current timezone as ""[currentTimeZone]"" and return only a valid JSON array without extra formatting.
         ";
+
+    }
+
+    private async Task<string> GetUserRoutine(string userId)
+    {
+        var routine = await _userRoutineRepositary.GetUserRoutineAsync(userId);
+        if (routine == null)
+        {
+            return string.Empty; // or some default routine
+        }
+
+        return BuildRoutineSummary(routine);        
+    }
+
+    private string BuildRoutineSummary(RoutineProfile routine)
+    {
+        if (routine == null)
+        {
+            return "";
+        }
+        var sb = new System.Text.StringBuilder();
+
+        // Awake window
+        if (!string.IsNullOrWhiteSpace(routine.WakeUpTime) &&
+            !string.IsNullOrWhiteSpace(routine.SleepTime))
+        {
+            sb.AppendLine($"- Awake from {routine.WakeUpTime} to {routine.SleepTime}");
+        }
+
+        // Work hours
+        if (routine.WorkStyleSettings != null &&
+            !string.IsNullOrWhiteSpace(routine.WorkStyleSettings.WorkHourStart) &&
+            !string.IsNullOrWhiteSpace(routine.WorkStyleSettings.WorkHourEnd))
+        {
+            sb.AppendLine($"- Works from {routine.WorkStyleSettings.WorkHourStart} to {routine.WorkStyleSettings.WorkHourEnd}");
+        }
+
+        // Productive hours
+        if (routine.WorkStyleSettings != null &&
+            routine.WorkStyleSettings.ProductiveHours != null && 
+            routine.WorkStyleSettings.ProductiveHours.Any())
+        {
+            var productive = string.Join(", ", routine.WorkStyleSettings.ProductiveHours);
+            sb.AppendLine($"- Most productive during: {productive}");
+        }
+
+        // Constraints
+        if (routine.Constraints != null)
+        {
+            if (!string.IsNullOrWhiteSpace(routine.Constraints.NoTaskBefore))
+            {
+                sb.AppendLine($"- Avoid scheduling before {routine.Constraints.NoTaskBefore}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(routine.Constraints.NoTaskAfter))
+            {
+                sb.AppendLine($"- Avoid scheduling after {routine.Constraints.NoTaskAfter}");
+            }
+        }
+
+        // Weekend inference from free text
+        if (!string.IsNullOrWhiteSpace(routine.FreeTextDescription))
+        {
+            if (routine.FreeTextDescription.Contains("weekend", StringComparison.OrdinalIgnoreCase) &&
+                routine.FreeTextDescription.Contains("9", StringComparison.OrdinalIgnoreCase))
+            {
+                sb.AppendLine($"- More details about user's routine: {routine.FreeTextDescription}");
+            }
+        }
+
+        return sb.ToString().Trim();
 
     }
 
