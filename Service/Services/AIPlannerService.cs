@@ -176,7 +176,36 @@ public class AIPlannerService
 
     private async Task<string> GetExistingTasksForTheUser(string userId, string userTimeZone)
     {
-        var tasks = await _taskRepositary.GetAllTasksAsync(userId);
+        var now = DateTime.UtcNow;
+
+        var startRange = now.AddDays(-30);
+        var endRange = now.AddDays(30);
+
+        // First call: NotStarted
+        var notStartedFilter = new TaskFilterRequest
+        {
+            Status = (SmartTaskManager.Models.DTO.TaskStatus)SmartTaskManager.Models.Entities.TaskStatus.NotStarted,
+            Start = startRange,
+            End = endRange
+        };
+
+        var notStartedTasks = await _taskRepositary.GetTasksAsync(userId, notStartedFilter);
+
+        // Second call: InProgress
+        var inProgressFilter = new TaskFilterRequest
+        {
+            Status = (SmartTaskManager.Models.DTO.TaskStatus)SmartTaskManager.Models.Entities.TaskStatus.InProgress,
+            Start = startRange,
+            End = endRange
+        };
+
+        var inProgressTasks = await _taskRepositary.GetTasksAsync(userId, inProgressFilter);
+
+        // Combine results
+        var tasks = notStartedTasks
+            .Concat(inProgressTasks)
+            .ToList();
+
      
         TimeZoneInfo? userLocalTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZone);
 
