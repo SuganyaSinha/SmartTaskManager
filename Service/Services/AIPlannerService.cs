@@ -13,7 +13,6 @@ public class AIPlannerService
 {
     private readonly Kernel _kernel;
     private readonly ITaskRepository _taskRepositary;
-
     private readonly IUserRoutineRepositary _userRoutineRepositary;
 
     public AIPlannerService(Kernel kernel,
@@ -33,7 +32,7 @@ public class AIPlannerService
         
 
         var chatHistory = new ChatHistory();
-        chatHistory.AddSystemMessage(GetInitialSystemPrompt()
+        chatHistory.AddSystemMessage(GetInitialSystemPromptNew()
                                     .Replace("[INSERT_EXISTING_TASKS_HERE]", existingTasksJson)
                                     .Replace("[INSERT_ROUTINE_SUMMARY_HERE]", routineSummary)
                                     .Replace("[currentDate]", input.CurrentDate)
@@ -59,6 +58,63 @@ public class AIPlannerService
     //     );
 
     }
+
+    private string GetInitialSystemPromptNew()
+    {
+        return 
+        @"You are an intelligent task planner. Your job is to take the tasks from the user's latest message and schedule every single one of them.
+
+CRITICAL RULES (you MUST obey these at all times):
+- NEVER return an empty array. You must schedule EVERY task provided by the user.
+- All start times MUST be strictly AFTER the current datetime [currentDate] ([currentTimeZone]). Never schedule anything in the past or at the current moment.
+- Total scheduled hours per day (existing + new tasks) MUST NOT exceed 8 hours. If adding a task would break this limit, automatically move it to the next available day.
+- Leave at least 15 minutes break between any tasks (existing or new) on the same day.
+- When the user does NOT specify a date or time for a task, you MUST find the best future slot by following the exact algorithm below. Do not return empty or say ""no slot"".
+
+User's routine profile:
+[INSERT_ROUTINE_SUMMARY_HERE]
+
+Existing Schedule Context (read-only, do not modify):
+If a day is not listed below, it means there are no existing tasks for that day and you can schedule new tasks freely (still respecting the 8 h limit and 15 min breaks).
+[INSERT_EXISTING_TASKS_HERE]
+
+Scheduling Algorithm (follow exactly, in this order):
+
+1. Parse every task from the user's latest message (title, optional date/time, priority, duration, comments). 
+   - Infer missing values: priority = ""medium"" if not given, duration = 1 hour default unless obvious otherwise.
+2. Sort tasks by priority: high → medium → low.
+3. For each task (one by one):
+   a. If user gave a specific date/time:
+      - If it conflicts with existing tasks, is in the past, or would exceed 8 h → ignore the requested time and treat it as ""unspecified"" (go to step b).
+   b. If no time or conflict occurred:
+      - Start searching from [currentDate] onward, day by day.
+      - On each day, look only at OpenSlots that are large enough for (task duration + 15 min break before and after).
+      - Prefer productive windows when possible.
+      - Pick the earliest valid slot that keeps the day ≤ 8 h total.
+      - If the day is already at/near 8 h, immediately jump to the next day and repeat.
+4. If a high-priority task has no perfect slot, you may place it in the absolute earliest available slot even if it slightly violates productive time (but still respect 8 h limit and 15 min breaks).
+
+Output Requirements:
+- Return ONLY a compact, valid JSON array on a single line.
+- No explanations, no newlines, no extra spaces, no escaped characters, no markdown, no quotes around the whole thing.
+- Every object must have exactly these fields:
+  - ""title""
+  - ""day"" → full day name e.g. ""Wednesday""
+  - ""start"" → ""2026-02-18T17:30"" (local time, 24 h, no seconds, no Z)
+  - ""end"" → same format
+  - ""priority"" → ""high"" | ""medium"" | ""low""
+  - ""comments"" → short description (mention if you moved it because of full day or weekend preference)
+
+Example of correct output (exactly this style):
+[{""title"":""Do yoga"",""day"":""Wednesday"",""start"":""2026-02-18T17:30"",""end"":""2026-02-18T18:30"",""priority"":""medium"",""comments"":""Do yoga on Wednesday at 5:30 PM after existing tasks.""}]
+
+Current datetime: [currentDate]
+Timezone: [currentTimeZone]
+
+Now schedule the tasks from the user's message using the rules above and output only the raw JSON array.
+        ";
+    }
+
      private string GetInitialSystemPrompt()
     {
         return 
@@ -85,9 +141,13 @@ public class AIPlannerService
         - Only schedule new tasks based on the user's latest input. Do not alter, delete, or reschedule any existing tasks from the context.
         - If time is given (e.g., ""6-7""), interpret as local time (e.g., 6 PM to 7 PM).
         - NEVER schedule tasks in the past relative to the user's current local datetime.
-        - Schedule new tasks around the existing tasks, leaving at least a 30-minute break between tasks (existing or new).
-        - If the user's daily load (existing + new tasks) would exceed 8 hours, prioritize scheduling new tasks on a different day or reduce the scope (e.g., shorten duration) with a comment explaining the adjustment.
-
+        - Leave at least a 15-minute break between tasks (existing or new).
+        - If the user's daily load (existing + NewTaskDuration) would exceed 8 hours, prioritize scheduling new tasks on a different day or reduce the scope (e.g., shorten duration) with a comment explaining the adjustment.
+        - If the user specified time for a task conflicts with an existing task, then there is a conflict. So do not schedule task at the user specified time. Instead, apply the following rules:
+            - Schedule the new task at the earliest available time AFTER the conflicting task on the SAME DAY.
+            - If no valid time exists later that day:
+                → Schedule on the NEXT nearest possible day at the closest reasonable time.
+ 
         4. **Formatting Requirements**:
         - Return only valid JSON as a compact array on a single line.
         - Do not include any explanations, extra text, newlines (`\n`), indentation, or additional whitespace.
@@ -178,7 +238,7 @@ public class AIPlannerService
     {
         var now = DateTime.UtcNow;
 
-        var startRange = now.AddDays(-30);
+        var startRange = now.AddDays(-5);
         var endRange = now.AddDays(30);
 
         // First call: NotStarted
@@ -206,28 +266,124 @@ public class AIPlannerService
             .Concat(inProgressTasks)
             .ToList();
 
-     
+        // Convert the task time to user's local time zone
+        // Also compute the duration of each task     
         TimeZoneInfo? userLocalTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZone);
 
-        var tasksForOpenAi = tasks.Select(t => new OpenAiTaskItem
+        var localTasks = tasks
+            .Where(t => t.Start.HasValue && t.End.HasValue)
+            .Select(t =>
+            {
+                var localStart = TimeZoneInfo.ConvertTimeFromUtc(
+                    DateTime.SpecifyKind(t.Start.Value, DateTimeKind.Utc),
+                    userLocalTimeZone);
+
+                var localEnd = TimeZoneInfo.ConvertTimeFromUtc(
+                    DateTime.SpecifyKind(t.End.Value, DateTimeKind.Utc),
+                    userLocalTimeZone);
+
+                return new
+                {
+                    Title = t.Title ?? string.Empty,
+                    Start = localStart,
+                    End = localEnd,
+                    Date = localStart.Date,
+                    DurationHours = (localEnd - localStart).TotalHours,
+                    Status = t.Status,
+                    Priority = t.Priority ?? string.Empty,
+                    Comments = t.Comments ?? string.Empty
+                };
+            })
+            .OrderBy(t => t.Date)
+            .ThenBy(t => t.Start)
+            .ToList();
+
+        // var groupedTasks = localTasks
+        //     .GroupBy(t => t.Date)
+        //     .OrderBy(g => g.Key)
+        //     .Select(g => new
+        //     {
+        //         Date = g.Key.ToString("yyyy-MM-dd"),
+        //         TotalScheduledHours = Math.Round(g.Sum(t => t.DurationHours), 2),
+        //         Tasks = g.Select(t => new
+        //         {
+        //             Title = t.Title,
+        //             Start = t.Start.ToString("yyyy-MM-ddTHH:mm:ss"),
+        //             End = t.End.ToString("yyyy-MM-ddTHH:mm:ss"),
+        //             Priority = t.Priority,
+        //             Comments = t.Comments,
+        //             Status = t.Status,
+        //             DurationHours = Math.Round(t.DurationHours, 2)
+        //         }).ToList()
+        //     })
+        //     .ToList();
+
+        // Group the task by date and order by the date
+        var groupedTasks = localTasks
+            .GroupBy(t => t.Date)
+            .OrderBy(g => g.Key)
+            .Select(g =>
         {
-    
-            Title = t.Title ?? string.Empty,
-            Start = t.Start.HasValue ? TimeZoneInfo.ConvertTimeFromUtc( // convert to user's local time
-                                       DateTime.SpecifyKind(t.Start.Value, DateTimeKind.Utc), //get utc time from db
-                                       userLocalTimeZone // user's local timezone
-                                       ).ToString("yyyy-MM-ddTHH:mm:ss") : string.Empty, // return empty string if null
-            End = t.End.HasValue ? TimeZoneInfo.ConvertTimeFromUtc(
-                                   DateTime.SpecifyKind(t.End.Value, DateTimeKind.Utc),
-                                   userLocalTimeZone
-                                   ).ToString("yyyy-MM-ddTHH:mm:ss") : string.Empty,
-            Status = t.Status,
-            Priority = t.Priority ?? string.Empty,
-            Comments = t.Comments ?? string.Empty
-        }).ToList();
+            var day = g.Key;
+
+            // Find open slots for the day
+            var dayStart = day.Date;                      // 12:00:00 AM
+            var dayEnd = day.Date.AddDays(1).AddSeconds(-1);   // e.g. 23:00
+
+            var dayTasks = g.OrderBy(t => t.Start).ToList();
+            var openSlots = new List<object>();
+
+            DateTime cursor = dayStart;
+
+            foreach (var task in dayTasks)
+            {
+                // If there's a gap between cursor and task start
+                if (task.Start > cursor)
+                {
+                    openSlots.Add(new
+                    {
+                        Start = cursor.ToString("yyyy-MM-ddTHH:mm:ss"),
+                        End = task.Start.ToString("yyyy-MM-ddTHH:mm:ss"),
+                        DurationHours = Math.Round((task.Start - cursor).TotalHours, 2)
+                    });
+                }
+
+                // Move cursor forward
+                cursor = task.End > cursor ? task.End : cursor;
+            }
+
+            // Gap after last task
+            if (cursor < dayEnd)
+            {
+                openSlots.Add(new
+                {
+                    Start = cursor.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    End = dayEnd.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    DurationHours = Math.Round((dayEnd - cursor).TotalHours, 2)
+                });
+            }
+
+            return new
+            {
+                Date = day.ToString("yyyy-MM-dd"),
+                TotalScheduledHours = Math.Round(g.Sum(t => t.DurationHours), 2),
+                Tasks = dayTasks.Select(t => new
+                {
+                    Title = t.Title,
+                    Start = t.Start.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    End = t.End.ToString("yyyy-MM-ddTHH:mm:ss"),
+                    Priority = t.Priority,
+                    Comments = t.Comments,
+                    Status = t.Status,
+                    DurationHours = Math.Round(t.DurationHours, 2)
+                }).ToList(),
+                OpenSlots = openSlots
+            };
+        })
+        .ToList();
 
         string jsonString = JsonSerializer.Serialize(
-                            tasksForOpenAi, new JsonSerializerOptions { WriteIndented = true });
+                            groupedTasks, new JsonSerializerOptions { WriteIndented = true });
 
         return jsonString;
     }
