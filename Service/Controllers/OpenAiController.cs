@@ -9,21 +9,12 @@ using SmartTaskManager.Interfaces;
 
 [ApiController]
 [Route("api/openai")]
-public class OpenAiController : ControllerBase
+public class OpenAiController : BaseController
 {
     private readonly OpenAiService _openAiService;
     private readonly IPromptService _promptService;
 
     private readonly AIPlannerService _aiPlannerService;
-
-    private string GetUserId()
-    {
-        var userId = User.FindFirst("sub")?.Value;
-        if(string.IsNullOrEmpty(userId))
-            throw new Exception("Could not get the User Id from the token");
-        else
-            return userId;
-    }
 
     public OpenAiController( OpenAiService openAiService,
                             IPromptService promptService,

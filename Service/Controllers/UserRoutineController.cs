@@ -7,18 +7,9 @@ namespace TaskManagerApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UserRoutineController : ControllerBase
+    public class UserRoutineController : BaseController
     {
         private readonly IUserRoutineService _userRoutineService;
-
-        private string GetUserId()
-        {
-            var userId = User.FindFirst("sub")?.Value;
-            if(string.IsNullOrEmpty(userId))
-                throw new Exception("Could not get the User Id from the token");
-            else
-                return userId;
-        }
 
         public UserRoutineController(IUserRoutineService userRoutineService)
         {

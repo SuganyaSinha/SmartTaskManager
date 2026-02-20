@@ -8,7 +8,7 @@ using SmartTaskManager.Models;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PromptController : ControllerBase
+public class PromptController : BaseController
 {
     private readonly IPromptService _promptService;
 
