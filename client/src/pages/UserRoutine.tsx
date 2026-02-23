@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { RoutineProfile, ProductiveHours, WorkStyleSettings, Constraints } from "../types/common";
 import { updateUserRoutine, getUserRoutine, createUserRoutine } from "../services/userRoutineService";
-import { useAuth0 } from "@auth0/auth0-react";
 import { formatTime } from "../utilities/timeFormatter";
 
 const defaultRoutine: RoutineProfile = {
@@ -25,13 +24,12 @@ export const UserRoutine: React.FC = () => {
   const [routine, setRoutine] = useState<RoutineProfile>(defaultRoutine);
   const [loading, setLoading] = useState(false);
   const [isExistingRoutine, setIsExistingRoutine] = useState(false);
-  const { getAccessTokenSilently } = useAuth0();
 
   useEffect(() => {
   const loadUserRoutine = async () => {
     try {
       setLoading(true);
-      const existingRoutine = await getUserRoutine(getAccessTokenSilently);
+      const existingRoutine = await getUserRoutine();
 
       if (existingRoutine) {
         setRoutine(existingRoutine);
@@ -49,17 +47,17 @@ export const UserRoutine: React.FC = () => {
   };
 
   loadUserRoutine();
-}, [getAccessTokenSilently]);
+}, []);
 
   const handleSubmit = async () => {
     try {
         setLoading(true);
 
         if (isExistingRoutine) {
-            const updated = await updateUserRoutine(routine, getAccessTokenSilently);
+            const updated = await updateUserRoutine(routine);
             setRoutine(updated);
         } else {
-            const created = await createUserRoutine(routine, getAccessTokenSilently);
+            const created = await createUserRoutine(routine);
             setRoutine(created);           
             setIsExistingRoutine(true);    
         }

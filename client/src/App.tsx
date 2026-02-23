@@ -1,9 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './App.css';
 import Home from './pages/Home';
 import { withAuthenticationRequired } from '@auth0/auth0-react';
+import { useApiToken } from './utilities/useApiToken';
+import { setAuthTokenGetter } from './services/api';
 
 import NavBar from './pages/NavBar';
 import TaskScheduler from './pages/TaskScheduler';
@@ -18,9 +20,18 @@ const ProtectedTaskScheduler = withAuthenticationRequired(TaskScheduler);
 const ProtectedTaskPage = withAuthenticationRequired(TaskPage);
 const ProtectedUserRoutine = withAuthenticationRequired(UserRoutine);
 
+function AuthTokenSetup() {
+  const { getToken } = useApiToken();
+  useEffect(() => {
+    setAuthTokenGetter(getToken);
+  }, [getToken]);
+  return null;
+}
+
 function App() {
   return (
     <>
+      <AuthTokenSetup />
 
 <div style={{display: "flex"}}>
     <div style={{width: "10%", flexBasis : ""}}>

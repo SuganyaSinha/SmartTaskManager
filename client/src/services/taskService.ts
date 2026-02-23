@@ -1,25 +1,15 @@
 import api from "./api"
 import { NewTask, TaskFilter } from '../types/common';
-import { GetTokenSilentlyOptions } from "@auth0/auth0-react";
-import { GetTokenSilentlyVerboseResponse } from "@auth0/auth0-spa-js";
 
 // Get all tasks for the user
 // tbd not tested yet
-export const getUserTasks = async (getAccessTokenSilently: any) : 
-                                   Promise<NewTask[]>=> {
+export const getUserTasks = async () : Promise<NewTask[]>=> {
 
     try{
-        const token = await getAccessTokenSilently();
-        const response = await api.get(
-            '/tasks',
-            {
-                headers: {
-                    'Content-Type': 'application/json', 
-                     Authorization: `Bearer ${token}`
-                },
-            }
-            );
-    
+        const response = await api.get('/tasks', {
+            headers: { 'Content-Type': 'application/json' },
+        });
+
         const test = JSON.parse(response.data.response);
         return response.data;
     }
@@ -31,29 +21,18 @@ export const getUserTasks = async (getAccessTokenSilently: any) :
     }
   };
 
-  export const getTasks = async (getAccessTokenSilently : any,
-                                    filter? : TaskFilter 
-                                ) : 
-                                          Promise<NewTask[]> => {
+export const getTasks = async (filter? : TaskFilter) : Promise<NewTask[]> => {
     try{
-        const token = await getAccessTokenSilently();
-        const response = await api.get(
-            '/api/tasks/test',
-            {
-                headers: {
-                    'Content-Type': 'application/json', 
-                     Authorization: `Bearer ${token}`
-                },
-                params: filter
-            }
-            );
-    
+        const response = await api.get('/api/tasks/test', {
+            headers: { 'Content-Type': 'application/json' },
+            params: filter
+        });
+
         const test = response.data;
         return response.data;
     }
     catch(error)
     {
-
         console.error("getTasks API call failed:", error);
         throw error;
     }
@@ -61,22 +40,12 @@ export const getUserTasks = async (getAccessTokenSilently: any) :
 
 // Get tasks for the user by month
 // tbd not tested yet
-export const getTasksForTheMonth = async (year : number,
-                                          month : number, 
-                                          getAccessTokenSilently : any) : 
-                                          Promise<NewTask[]> => {
+export const getTasksForTheMonth = async (year : number, month : number) : Promise<NewTask[]> => {
     try{
-        const token = await getAccessTokenSilently();
-        const response = await api.get(
-            `/api/tasks/month/${year}/${month}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json', 
-                     Authorization: `Bearer ${token}`
-                },
-            }
-            );
-    
+        const response = await api.get(`/api/tasks/month/${year}/${month}`, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+
         const test = response.data;
         return response.data;
     }
@@ -89,23 +58,15 @@ export const getTasksForTheMonth = async (year : number,
   };
 
 // Create task for the user
-  export const createTask = async (task : NewTask, getAccessTokenSilently : any) => {
+export const createTask = async (task : NewTask) => {
 
     try{
-        const token = await getAccessTokenSilently();
-        const response = await api.post(
-            'api/tasks',
-            task,
-            {
-                headers: {
-                    'Content-Type': 'application/json', 
-                     Authorization: `Bearer ${token}`
-                },
-            }
-            );
+        const response = await api.post('api/tasks', task, {
+            headers: { 'Content-Type': 'application/json' },
+        });
 
         const test = response.data;
-    
+
         return response.data;
     }
     catch(error)
@@ -117,35 +78,22 @@ export const getTasksForTheMonth = async (year : number,
   };
 
 /// Update task for the user
-export const updateTask = async (taskId: string, updates: Partial<NewTask>, getAccessTokenSilently : any) => {
+export const updateTask = async (taskId: string, updates: Partial<NewTask>) => {
 
     try{
-        const token = await getAccessTokenSilently();
-        const response = await api.patch(
-            
-             `/api/tasks/${taskId}`,
-                        {
-                            id: updates.id,
-                title: updates.title,
-                start: updates.start,
-                end: updates.end,
-                priority: updates.priority,
-                comments: updates.comments,
-                status: updates.status
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json', 
-                     Authorization: `Bearer ${token}`
-                },
-            }
-            );
-    
-        //const test = JSON.parse(response.data);
+        const response = await api.patch(`/api/tasks/${taskId}`, {
+            id: updates.id,
+            title: updates.title,
+            start: updates.start,
+            end: updates.end,
+            priority: updates.priority,
+            comments: updates.comments,
+            status: updates.status
+        }, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+
         console.log("updateTask API response:", response);
-       
-        //console.log("updateTask API response:", test);
-  
         return response.data;
     }
     catch(error)
@@ -158,20 +106,13 @@ export const updateTask = async (taskId: string, updates: Partial<NewTask>, getA
 
 // Delete task for the user
 // tbd not tested yet
-export const deleteTask = async (taskId: string, getAccessTokenSilently : any) => {
+export const deleteTask = async (taskId: string) => {
 
     try{
-        const token = await getAccessTokenSilently();
-        const response = await api.delete(
-            `/api/tasks/${taskId}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json', 
-                     Authorization: `Bearer ${token}`
-                },
-            }
-            );
-    
+        const response = await api.delete(`/api/tasks/${taskId}`, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+
         return response.data;
     }
     catch(error)

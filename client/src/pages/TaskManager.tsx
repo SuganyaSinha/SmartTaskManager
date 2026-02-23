@@ -5,7 +5,6 @@ import { Schedule } from '../types/common';
 import CalendarView from './CalendarView';
 import DayView from './DayView';
 import './styles.css';
-import { useAuth0 } from "@auth0/auth0-react";
 
 
 const TaskManager: React.FC = () => {
@@ -16,8 +15,6 @@ const TaskManager: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const { getAccessTokenSilently } = useAuth0();
-
   const addPromptToHistory = (newPrompt: string) => {
     setPromptHistory((prevHistory) => [...prevHistory, newPrompt]);
     setInput('');
@@ -27,7 +24,7 @@ const TaskManager: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try{
-        const response = await postUserInput(input, getAccessTokenSilently);
+        const response = await postUserInput(input);
         const test = response;
         //setSchedule(response);
         addPromptToHistory(input);
@@ -43,12 +40,12 @@ const TaskManager: React.FC = () => {
   };
 
   const handleGet = async () => {
-    
+
     setIsLoading(true);
     setError(null);
     try{
-        
-        const response = await getUserInformation(getAccessTokenSilently);
+
+        const response = await getUserInformation();
         const test = response;
         console.log(test);
         

@@ -5,7 +5,6 @@ import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import tasksData from "./tasks.json";
 import { NewTask, TaskStatus } from "../types/common";
-import { useAuth0 } from "@auth0/auth0-react";
 import { postUserInput } from '../services/openAiService';
 import { getTasksForTheMonth, updateTask, deleteTask } from '../services/taskService';
 import AudioInput from "./AudioInput";
@@ -33,7 +32,6 @@ const TaskScheduler = () => {
   const [currentDate, setCurrentDate] = useState(initialDate);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { getAccessTokenSilently } = useAuth0();
 
   const selectedTask = useMemo(
     () => events.find(e => e.id === selectedTaskId) || null,
@@ -46,7 +44,7 @@ const TaskScheduler = () => {
         const month = date.getMonth() + 1;
 
         try{
-            const response = await getTasksForTheMonth( year, month, getAccessTokenSilently);
+            const response = await getTasksForTheMonth(year, month);
             console.log("API Response:", response);
             const formattedEvents = response.map(task => ({
               id: task.id,
@@ -66,7 +64,7 @@ const TaskScheduler = () => {
         finally{
 
         }
-      },[getAccessTokenSilently]);
+      },[]);
 
   // Fetch tasks when the component mounts
   useEffect(() => {
@@ -141,7 +139,7 @@ const TaskScheduler = () => {
       if (!selectedTask?.id) {
         throw new Error('Task ID is missing');
       }
-      const apiResponse = await updateTask(selectedTask.id, updatedTask, getAccessTokenSilently);
+      const apiResponse = await updateTask(selectedTask.id, updatedTask);
       // Update local state using the response from the API and match by id
       const updatedEvent: NewTask = {
         ...apiResponse,
@@ -171,7 +169,7 @@ const TaskScheduler = () => {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      const response = await deleteTask(taskId, getAccessTokenSilently);
+      const response = await deleteTask(taskId);
       console.log("API Response for deleting task:", response);
       setEvents(prev => prev.filter(event => event.id !== taskId));
       setIsModalOpen(false);
@@ -188,7 +186,7 @@ const TaskScheduler = () => {
         setIsLoading(true);
         setError(null);
         try{
-            const response = await postUserInput(userInput, getAccessTokenSilently);
+            const response = await postUserInput(userInput);
             const test = response;
             console.log("API Response:", response);
             addTasksFromApi(response);

@@ -1,20 +1,11 @@
 import api from "./api"
 import { RoutineProfile } from "../types/common";
 
-export async function createUserRoutine(data: RoutineProfile, getAccessTokenSilently: any) : Promise<RoutineProfile> {
+export async function createUserRoutine(data: RoutineProfile) : Promise<RoutineProfile> {
     try{
-        
-        const token = await getAccessTokenSilently();
-        const response = await api.post(
-            'api/userroutine',
-            data,
-            {
-                headers: {
-                    'Content-Type': 'application/json', 
-                     Authorization: `Bearer ${token}`
-                },
-            }
-            );
+        const response = await api.post('api/userroutine', data, {
+            headers: { 'Content-Type': 'application/json' },
+        });
 
         return response.data;
     }
@@ -25,21 +16,13 @@ export async function createUserRoutine(data: RoutineProfile, getAccessTokenSile
     }
 }
 
-export async function getUserRoutine(getAccessTokenSilently: any) : Promise<RoutineProfile> {
+export async function getUserRoutine() : Promise<RoutineProfile> {
     try{
-    
-    const token = await getAccessTokenSilently();
-    const response = await api.get(
-        'api/userroutine',
-        {
-            headers: {
-                'Content-Type': 'application/json', 
-                    Authorization: `Bearer ${token}`
-            },
-        }
-        );
+        const response = await api.get('api/userroutine', {
+            headers: { 'Content-Type': 'application/json' },
+        });
 
-    return response.data;
+        return response.data;
     }
     catch(error)
     {
@@ -48,20 +31,11 @@ export async function getUserRoutine(getAccessTokenSilently: any) : Promise<Rout
     }
 }
 
-export async function updateUserRoutine(data: RoutineProfile, getAccessTokenSilently: any) : Promise<RoutineProfile> {
+export async function updateUserRoutine(data: RoutineProfile) : Promise<RoutineProfile> {
     try{
-        
-        const token = await getAccessTokenSilently();
-        const response = await api.put(
-            'api/userroutine',
-            data,
-            {
-                headers: {
-                    'Content-Type': 'application/json', 
-                     Authorization: `Bearer ${token}`
-                },
-            }
-            );
+        const response = await api.put('api/userroutine', data, {
+            headers: { 'Content-Type': 'application/json' },
+        });
 
         return response.data;
     }
@@ -71,6 +45,3 @@ export async function updateUserRoutine(data: RoutineProfile, getAccessTokenSile
         throw error;
     }
 }
-
-
-

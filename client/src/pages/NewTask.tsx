@@ -1,14 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth0 } from '@auth0/auth0-react';
 import { postUserInput } from '../services/openAiService';
 import AudioInput from './AudioInput';
 
 function NewTask() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { getAccessTokenSilently } = useAuth0();
-
   const [userInput, setUserInput] = useState('');
   const [taskDate, setTaskDate] = useState('');
   const [taskTime, setTaskTime] = useState('');
@@ -76,7 +73,7 @@ function NewTask() {
         finalInput += ` - user preferred priority: ${priority}`;
       }
 
-      const response = await postUserInput(finalInput, getAccessTokenSilently);
+      const response = await postUserInput(finalInput);
       console.log("API Response:", response);
       setSuccess(true);
       
