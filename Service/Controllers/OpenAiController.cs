@@ -33,8 +33,8 @@ public class OpenAiController : BaseController
         {
             return BadRequest("Prompt cannot be empty.");
         }
-        //var response = await _openAiService.GetResponseAsync(request, GetUserId());
-        var response = await _aiPlannerService.GenerateTaskAsync(request, GetUserId());
+        //var response = await _openAiService.GetResponseAsync(request, UserId);
+        var response = await _aiPlannerService.GenerateTaskAsync(request, UserId);
 
         var sub = User.FindFirst("sub")?.Value;
         if(sub != null)

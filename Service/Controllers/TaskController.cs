@@ -20,22 +20,22 @@ namespace TaskManagerApi.Controllers
 
         [HttpGet]
         public async Task<ActionResult<List<TaskItem>>> GetAllTasks(){
-            var tasks = await _taskService.GetAllTasksAsync(GetUserId());
+            var tasks = await _taskService.GetAllTasksAsync(UserId);
             return Ok(tasks);
         }
 
         [HttpGet("test")]
         public async Task<ActionResult<List<TaskItem>>> GetTasks([FromQuery] TaskFilterRequest filter)
         {
-            var userId = GetUserId();
-            var tasks = await _taskService.GetTasksAsync(userId, filter);
+            var userId = UserId;
+            var tasks = await _taskService.GetTasksAsync(UserId, filter);
             return Ok(tasks);
         }
 
         [HttpGet("month/{year}/{month}")]
         public async Task<ActionResult<List<TaskItem>>> GetTasksByMonth(int year, int month)
         {
-            var tasks = await _taskService.GetTasksByMonthAsync(GetUserId(), year, month);
+            var tasks = await _taskService.GetTasksByMonthAsync(UserId, year, month);
             return Ok(tasks);
         }
 
@@ -49,14 +49,14 @@ namespace TaskManagerApi.Controllers
         [HttpPost]
         public async Task<ActionResult<TaskItem>> CreateTask([FromBody]CreateTaskItem task)
         {
-            var createdTask = await _taskService.CreateTaskAsync(GetUserId(), task);
+            var createdTask = await _taskService.CreateTaskAsync(UserId, task);
             return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult<TaskItem>> UpdateTask(string id, [FromBody]TaskItem task)
         {
-            var updatedTask = await _taskService.UpdateTaskAsync(id, GetUserId(), task);
+            var updatedTask = await _taskService.UpdateTaskAsync(id, UserId, task);
             return Ok(updatedTask);
         }
 
@@ -65,7 +65,7 @@ namespace TaskManagerApi.Controllers
         {
             try
             {
-                var patchedTask = await _taskService.PatchTaskAsync(id, GetUserId(), taskUpdate);
+                var patchedTask = await _taskService.PatchTaskAsync(id, UserId, taskUpdate);
                 return Ok(patchedTask);
             }
             catch (KeyNotFoundException)
@@ -77,7 +77,7 @@ namespace TaskManagerApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(string id)
         {
-            var result = await _taskService.DeleteTaskAsync(id, GetUserId());
+            var result = await _taskService.DeleteTaskAsync(id, UserId);
             if (!result)
             {
                 return NotFound();

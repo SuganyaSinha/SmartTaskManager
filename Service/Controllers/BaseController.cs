@@ -2,11 +2,19 @@ using Microsoft.AspNetCore.Mvc;
 
 public abstract class BaseController : ControllerBase
 {
-    protected string GetUserId()
+    private string _userId;
+
+    protected string UserId
     {
-        var userId = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrEmpty(userId))
-            throw new Exception("Could not get the User Id from the token");
-        return userId;
+        get
+        {
+            if (string.IsNullOrEmpty(_userId))
+            {
+                _userId = User.FindFirst("sub")?.Value;
+                if (string.IsNullOrEmpty(_userId))
+                    throw new Exception("Could not get the User Id from the token");
+            }
+            return _userId;
+        }
     }
 }
