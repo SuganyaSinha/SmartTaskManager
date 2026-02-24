@@ -3,7 +3,6 @@ import { Calendar, momentLocalizer } from "react-big-calendar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import tasksData from "./tasks.json";
 import { NewTask, TaskStatus } from "../types/common";
 import { postUserInput } from '../services/openAiService';
 import { getTasksForTheMonth, updateTask, deleteTask } from '../services/taskService';
