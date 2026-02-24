@@ -104,6 +104,19 @@ export const updateTask = async (taskId: string, updates: Partial<NewTask>) => {
     }
   };
 
+// Get a single task by ID
+export const getTaskById = async (taskId: string): Promise<NewTask> => {
+    try {
+        const response = await api.get(`/api/tasks/${taskId}`, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("getTaskById API call failed:", error);
+        throw error;
+    }
+};
+
 // Delete task for the user
 // tbd not tested yet
 export const deleteTask = async (taskId: string) => {

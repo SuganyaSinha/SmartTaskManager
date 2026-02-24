@@ -13,11 +13,13 @@ import NotFound from './pages/NotFound';
 import NewTask from './pages/NewTask';
 import Callback from './pages/Callback';
 import TaskPage from './pages/TaskPage';
+import TaskDetail from './pages/TaskDetail';
 import {UserRoutine} from './pages/UserRoutine';
 
 const ProtectedNewTask = withAuthenticationRequired(NewTask);
 const ProtectedTaskScheduler = withAuthenticationRequired(TaskScheduler);
 const ProtectedTaskPage = withAuthenticationRequired(TaskPage);
+const ProtectedTaskDetail = withAuthenticationRequired(TaskDetail);
 const ProtectedUserRoutine = withAuthenticationRequired(UserRoutine);
 
 function AuthTokenSetup() {
@@ -60,6 +62,11 @@ function App() {
           <Route
           path="/Task"
           element={<ProtectedTaskPage />}
+        />
+
+        <Route
+          path="/tasks/:id"
+          element={<ProtectedTaskDetail />}
         />
 
         {/* Optional: Handle Auth0 callback explicitly */}

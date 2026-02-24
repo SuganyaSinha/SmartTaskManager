@@ -1,4 +1,5 @@
 // components/TaskCard.tsx
+import { Link } from 'react-router-dom';
 import { NewTask } from "../types/common";
 
 interface TaskCardProps {
@@ -17,12 +18,12 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     <div className="grid grid-cols-12 items-center gap-4 px-4 py-3 border-b hover:bg-gray-50">
       {/* Title */}
       <div className="col-span-6 truncate">
-        <a
-          href={`/tasks/${task.id}`}
+        <Link
+          to={`/tasks/${task.id}`}
           className="text-blue-600 hover:underline font-medium"
         >
           {task.title}
-        </a>
+        </Link>
       </div>
 
       {/* Status */}
