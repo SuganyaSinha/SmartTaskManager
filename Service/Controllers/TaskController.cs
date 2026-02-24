@@ -8,6 +8,7 @@ namespace TaskManagerApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TasksController : BaseController
     {
         private readonly ITaskService _taskService;
@@ -17,7 +18,6 @@ namespace TaskManagerApi.Controllers
             _taskService = taskService;
         }
 
-        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<List<TaskItem>>> GetAllTasks(){
             var tasks = await _taskService.GetAllTasksAsync(GetUserId());
@@ -39,7 +39,6 @@ namespace TaskManagerApi.Controllers
             return Ok(tasks);
         }
 
-        //[Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(string id)
         {
@@ -47,7 +46,6 @@ namespace TaskManagerApi.Controllers
             return task == null ? NotFound() : Ok(task);
         }
 
-        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<TaskItem>> CreateTask([FromBody]CreateTaskItem task)
         {
@@ -55,7 +53,6 @@ namespace TaskManagerApi.Controllers
             return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
         }
 
-        //[Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult<TaskItem>> UpdateTask(string id, [FromBody]TaskItem task)
         {
@@ -63,7 +60,6 @@ namespace TaskManagerApi.Controllers
             return Ok(updatedTask);
         }
 
-        //[Authorize]
         [HttpPatch("{id}")]
         public async Task<ActionResult<TaskItem>> PatchTask(string id, [FromBody]TaskItem taskUpdate)
         {
@@ -78,7 +74,6 @@ namespace TaskManagerApi.Controllers
             }
         }
 
-        //[Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(string id)
         {

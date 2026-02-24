@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartTaskManager.Models.DTO;
 using SmartTaskManager.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace TaskManagerApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UserRoutineController : BaseController
     {
         private readonly IUserRoutineService _userRoutineService;
@@ -16,7 +18,6 @@ namespace TaskManagerApi.Controllers
             _userRoutineService = userRoutineService;
         }
 
-        //[Authorize]
         [HttpGet]
         public async Task<ActionResult<RoutineProfile>> GetUserRoutine()
         {
@@ -24,7 +25,6 @@ namespace TaskManagerApi.Controllers
             return Ok(routine);
         }
 
-        //[Authorize]
         [HttpPost]
         public async Task<ActionResult<RoutineProfile>> CreateUserRoutine([FromBody]RoutineProfile routine)
         {
@@ -32,7 +32,6 @@ namespace TaskManagerApi.Controllers
             return CreatedAtAction(nameof(GetUserRoutine), new { id = createdRoutine.Id }, createdRoutine);
         }
 
-        //[Authorize]
         [HttpPut]
         public async Task<ActionResult<RoutineProfile>> UpdateUserRoutine([FromBody]RoutineProfile routine)
         {
@@ -40,7 +39,6 @@ namespace TaskManagerApi.Controllers
             return Ok(updatedRoutine);
         }
 
-        //[Authorize]
         [HttpDelete]
         public async Task<IActionResult> DeleteUserRoutine()
         {
