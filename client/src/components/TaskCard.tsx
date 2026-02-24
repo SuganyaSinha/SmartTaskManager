@@ -7,40 +7,58 @@ interface TaskCardProps {
 }
 
 const statusColorMap: Record<string, string> = {
-  NotStarted: "bg-gray-100 text-gray-700",
+  NotStarted: "bg-gray-100 text-gray-600",
   InProgress: "bg-blue-100 text-blue-700",
   Completed: "bg-green-100 text-green-700",
   Blocked: "bg-red-100 text-red-700",
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
+  const startDate = new Date(task.start).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const statusClass = statusColorMap[task.status] ?? "bg-gray-100 text-gray-600";
+
   return (
-    <div className="grid grid-cols-12 items-center gap-4 px-4 py-3 border-b hover:bg-gray-50">
-      {/* Title */}
-      <div className="col-span-6 truncate">
-        <Link
-          to={`/tasks/${task.id}`}
-          className="text-blue-600 hover:underline font-medium"
-        >
-          {task.title}
-        </Link>
+    <div className="border-b last:border-b-0 hover:bg-gray-50 transition-colors">
+
+      {/* Mobile layout */}
+      <div className="sm:hidden px-4 py-3">
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <Link
+            to={`/tasks/${task.id}`}
+            className="text-blue-600 hover:underline font-medium text-sm leading-snug"
+          >
+            {task.title}
+          </Link>
+          <span className={`flex-shrink-0 inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${statusClass}`}>
+            {task.status}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400">{startDate}</p>
       </div>
 
-      {/* Status */}
-      <div className="col-span-3">
-        <span
-          className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-            statusColorMap[task.status]
-          }`}
-        >
-          {task.status}
-        </span>
+      {/* Desktop layout */}
+      <div className="hidden sm:grid sm:grid-cols-12 sm:items-center sm:gap-4 px-4 py-3">
+        <div className="col-span-6 truncate">
+          <Link
+            to={`/tasks/${task.id}`}
+            className="text-blue-600 hover:underline font-medium"
+          >
+            {task.title}
+          </Link>
+        </div>
+        <div className="col-span-3">
+          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${statusClass}`}>
+            {task.status}
+          </span>
+        </div>
+        <div className="col-span-3 text-sm text-gray-500">{startDate}</div>
       </div>
 
-      {/* Start Date */}
-      <div className="col-span-3 text-sm text-gray-600">
-        {new Date(task.start).toLocaleDateString()}
-      </div>
     </div>
   );
 };

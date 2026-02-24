@@ -2,30 +2,29 @@
 import { NewTask } from "../types/common";
 import TaskCard from "./TaskCard";
 
-
 interface TaskListProps {
   tasks: NewTask[];
 }
 
 const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
- if (tasks.length === 0) {
+  if (tasks.length === 0) {
     return (
-      <div className="p-4 text-gray-500 text-sm">
-        No tasks found.
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-12 text-center">
+        <p className="text-gray-400 text-sm">No tasks found.</p>
+        <p className="text-gray-300 text-xs mt-1">Try adjusting your filters.</p>
       </div>
     );
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
-      {/* Header */}
-      <div className="grid grid-cols-12 gap-4 px-4 py-2 bg-gray-100 text-sm font-semibold text-gray-600">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Column headers — desktop only */}
+      <div className="hidden sm:grid sm:grid-cols-12 sm:gap-4 px-4 py-2.5 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
         <div className="col-span-6">Title</div>
         <div className="col-span-3">Status</div>
         <div className="col-span-3">Start Date</div>
       </div>
 
-      {/* Rows */}
       {tasks.map(task => (
         <TaskCard key={task.id} task={task} />
       ))}

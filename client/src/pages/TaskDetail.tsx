@@ -140,7 +140,7 @@ const TaskDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="max-w-xl mx-auto">
+      <div className="max-w-xl">
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
 
           {/* ── Header ── */}
