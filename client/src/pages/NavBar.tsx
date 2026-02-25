@@ -65,7 +65,8 @@ const NavBar = () => {
                   <tr><td><Link to="/UserRoutine">Your Routine</Link></td></tr>
                   <tr><td><Link to="/Task">Task</Link></td></tr>
                   <tr><td><Link to="/NewTask">Add new task</Link></td></tr>
-                  <tr><td><Link to="/Calendar">Calendar view</Link></td></tr>                
+                  <tr><td><Link to="/Calendar">Calendar view</Link></td></tr>
+                  <tr><td><Link to="/CalendarNew">Smart Calendar ✨</Link></td></tr>
               </table>
             </div>
 

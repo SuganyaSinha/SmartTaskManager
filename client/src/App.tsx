@@ -9,6 +9,7 @@ import { setAuthTokenGetter } from './services/api';
 
 import NavBar from './pages/NavBar';
 import TaskScheduler from './pages/TaskScheduler';
+import TaskCalendarView from './pages/TaskCalendarView';
 import NotFound from './pages/NotFound';
 import NewTask from './pages/NewTask';
 import Callback from './pages/Callback';
@@ -18,6 +19,7 @@ import {UserRoutine} from './pages/UserRoutine';
 
 const ProtectedNewTask = withAuthenticationRequired(NewTask);
 const ProtectedTaskScheduler = withAuthenticationRequired(TaskScheduler);
+const ProtectedTaskCalendarView = withAuthenticationRequired(TaskCalendarView);
 const ProtectedTaskPage = withAuthenticationRequired(TaskPage);
 const ProtectedTaskDetail = withAuthenticationRequired(TaskDetail);
 const ProtectedUserRoutine = withAuthenticationRequired(UserRoutine);
@@ -57,6 +59,10 @@ function App() {
         <Route
           path="/Calendar"
           element={<ProtectedTaskScheduler />}
+        />
+        <Route
+          path="/CalendarNew"
+          element={<ProtectedTaskCalendarView />}
         />
 
           <Route
