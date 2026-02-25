@@ -30,6 +30,12 @@ namespace SmartTaskManager.Models.Entities
         [BsonElement("status")]
         [BsonRepresentation(BsonType.String)]   
         public TaskStatus Status { get; set; } = TaskStatus.NotStarted;
+
+        [BsonElement("createdTime")]
+        public DateTime? CreatedTime { get; set; } = null;
+
+        [BsonElement("lastUpdated")]
+        public DateTime? LastUpdated { get; set; } = null;
     }
 
         public enum TaskStatus

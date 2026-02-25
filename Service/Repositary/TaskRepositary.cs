@@ -88,10 +88,12 @@ namespace SmartTaskManager.Repositary
             task.Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
             
             try{
-                var testEntity = _mapper.Map<TaskEntity>(task);
+                var taskEntity = _mapper.Map<TaskEntity>(task);
+                taskEntity.CreatedTime = DateTime.UtcNow;
+                taskEntity.LastUpdated = DateTime.UtcNow;
                 //testEntity.Id = string.IsNullOrEmpty(task.Id) ? MongoDB.Bson.ObjectId.GenerateNewId().ToString() : task.Id;
                 
-                await _taskCollection.InsertOneAsync(testEntity); 
+                await _taskCollection.InsertOneAsync(taskEntity); 
             }
             catch(Exception ex)
             {
@@ -116,6 +118,7 @@ namespace SmartTaskManager.Repositary
             existingTask.Priority = task.Priority ?? existingTask.Priority;
             existingTask.Comments = task.Comments ?? existingTask.Comments;
             existingTask.Status = (SmartTaskManager.Models.Entities.TaskStatus) task.Status;
+            existingTask.LastUpdated = DateTime.UtcNow;
 
             await _taskCollection.ReplaceOneAsync(t => t.Id == id, existingTask);
             return _mapper.Map<TaskItem>(existingTask);
