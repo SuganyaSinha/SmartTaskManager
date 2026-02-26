@@ -304,8 +304,11 @@ const TaskCalendarView = () => {
           </div>
         )}
 
+      </aside>
+
+      {/* ── Calendar ── */}
+      <main className="tcv-main">
         <div className="tcv-legend">
-          <div className="tcv-legend-title">Status legend</div>
           {LEGEND.map(({ label, color }) => (
             <div key={label} className="tcv-legend-item">
               <span className="tcv-legend-dot" style={{ background: color }} />
@@ -313,10 +316,6 @@ const TaskCalendarView = () => {
             </div>
           ))}
         </div>
-      </aside>
-
-      {/* ── Calendar ── */}
-      <main className="tcv-main">
         <div className="tcv-calendar-wrap">
           <FullCalendar
             ref={calendarRef}

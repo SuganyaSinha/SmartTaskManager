@@ -1,14 +1,13 @@
 /* ─── Root layout ──────────────────────────────────────────────────────── */
 .tcv-root {
   display: flex;
-  /* App.css sets body { margin: 20px }.
-     Total dead space = 20px top + 20px bottom = 40px.
-     Subtract that so the calendar fills the viewport exactly, with no scrollbar. */
-  height: calc(100vh - 40px);
+  /* Header is 60px; body margin is 0. Content area fills the rest. */
+  height: 100%;
   background: #f8fafc;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   overflow: hidden;
 }
+
 
 /* ─── Sidebar ──────────────────────────────────────────────────────────── */
 .tcv-sidebar {
@@ -137,34 +136,27 @@
   line-height: 1.45;
 }
 
-/* ── Status legend ── */
+/* ── Status legend — horizontal strip above the calendar ── */
 .tcv-legend {
-  margin-top: auto;
-  padding-top: 14px;
-  border-top: 1px solid #f1f5f9;
-}
-
-.tcv-legend-title {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #cbd5e1;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 0 4px 10px;
+  flex-shrink: 0;
 }
 
 .tcv-legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 3px 0;
-  font-size: 0.78rem;
+  gap: 6px;
+  font-size: 0.75rem;
   color: #64748b;
 }
 
 .tcv-legend-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -465,35 +457,41 @@
 
 /* ─── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Stack vertically: compact chat strip on top, calendar fills the rest */
   .tcv-root {
     flex-direction: column;
-    height: auto;
-    min-height: 100vh;
+    height: 100%;
+    overflow: hidden;
   }
 
+  /* Sidebar becomes a compact horizontal strip at the top */
   .tcv-sidebar {
     width: 100%;
+    flex-shrink: 0;
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
-    padding: 14px 12px;
-    gap: 10px;
-  }
-
-  .tcv-legend {
-    margin-top: 0;
-    display: flex;
-    flex-wrap: wrap;
+    padding: 10px 12px;
     gap: 8px;
-    padding-top: 10px;
+    /* Limit height so the calendar still gets most of the screen */
+    max-height: 200px;
+    overflow-y: auto;
   }
 
-  .tcv-legend-item {
-    padding: 0;
+  /* Hide the title — saves vertical space on mobile */
+  .tcv-sidebar-header {
+    display: none;
   }
 
+  /* Make textarea shorter on mobile */
+  .tcv-textarea {
+    min-height: 56px;
+  }
+
+  /* Calendar takes all remaining height */
   .tcv-main {
-    padding: 10px;
-    height: 70vh;
+    flex: 1;
+    padding: 8px;
+    min-height: 0;
   }
 
   .tcv-calendar-wrap {
@@ -502,11 +500,16 @@
   }
 
   .tcv-calendar-wrap .fc-toolbar-title {
-    font-size: 0.95rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  .tcv-calendar-wrap .fc-toolbar.fc-header-toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   .tcv-calendar-wrap .fc-button {
     padding: 4px 8px !important;
-    font-size: 0.72rem !important;
+    font-size: 0.7rem !important;
   }
 }
