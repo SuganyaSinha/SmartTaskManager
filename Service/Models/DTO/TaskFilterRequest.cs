@@ -10,6 +10,13 @@ namespace SmartTaskManager.Models.DTO
         public DateTime? End { get; set; }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public TaskStatus Status { get; set; } = TaskStatus.NotStarted;
+        public TaskStatus Status { get; set; } = TaskStatus.All;
+
+        public bool IsEmpty =>
+            string.IsNullOrWhiteSpace(Title) &&
+            End == null &&
+            Start == null &&
+            Status == TaskStatus.All;
     }
+
 }

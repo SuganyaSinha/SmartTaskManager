@@ -61,7 +61,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ value, onChange }) => {
             }
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
           >
-            <option value="">All Statuses</option>
+            <option value={TaskStatus.All}>All Statuses</option>
             <option value={TaskStatus.NotStarted}>Not Started</option>
             <option value={TaskStatus.InProgress}>In Progress</option>
             <option value={TaskStatus.Completed}>Completed</option>

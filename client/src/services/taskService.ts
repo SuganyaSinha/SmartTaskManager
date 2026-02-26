@@ -2,28 +2,26 @@ import api from "./api"
 import { NewTask, TaskFilter } from '../types/common';
 
 // Get all tasks for the user
-// tbd not tested yet
-export const getUserTasks = async () : Promise<NewTask[]>=> {
-
+export const getAllTasks = async () : Promise<NewTask[]>=> {
     try{
-        const response = await api.get('/tasks', {
+        const response = await api.get('api/tasks', {
             headers: { 'Content-Type': 'application/json' },
         });
 
-        const test = JSON.parse(response.data.response);
+        const test = response.data;
         return response.data;
     }
     catch(error)
     {
         // tbd log the error
-        console.error("getUserTasks API call failed:", error);
+        console.error("getAllTasks API call failed:", error);
         throw error;
     }
   };
 
 export const getTasks = async (filter? : TaskFilter) : Promise<NewTask[]> => {
     try{
-        const response = await api.get('/api/tasks/test', {
+        const response = await api.get('/api/tasks', {
             headers: { 'Content-Type': 'application/json' },
             params: filter
         });
@@ -38,24 +36,6 @@ export const getTasks = async (filter? : TaskFilter) : Promise<NewTask[]> => {
     }
   };
 
-// Get tasks for the user by month
-// tbd not tested yet
-export const getTasksForTheMonth = async (year : number, month : number) : Promise<NewTask[]> => {
-    try{
-        const response = await api.get(`/api/tasks/month/${year}/${month}`, {
-            headers: { 'Content-Type': 'application/json' },
-        });
-
-        const test = response.data;
-        return response.data;
-    }
-    catch(error)
-    {
-        // tbd log the error
-        console.error("getTasksForTheMonth API call failed:", error);
-        throw error;
-    }
-  };
 
 // Create task for the user
 export const createTask = async (task : NewTask) => {

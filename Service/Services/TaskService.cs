@@ -15,21 +15,18 @@ namespace SmartTaskManager.Services
             _taskRepositary = taskRepositary;
          }
 
-        public async Task<List<TaskItem>> GetAllTasksAsync(string userId)
-        {
-            return await _taskRepositary.GetAllTasksAsync(userId);
-        }
-
         public async Task<List<TaskItem>> GetTasksAsync(string userId, TaskFilterRequest filter)
         {
-            return await _taskRepositary.GetTasksAsync(userId, filter);
+            if(filter == null || filter.IsEmpty)
+            {
+                return await _taskRepositary.GetAllTasksAsync(userId);
+            }
+            else
+            {
+                return await _taskRepositary.GetTasksAsync(userId, filter);
+            }   
         }   
-
-        public async Task<List<TaskItem>> GetTasksByMonthAsync(string userId, int year, int month)
-        {
-            return await _taskRepositary.GetTasksByMonthAsync(userId, year, month);
-        }
-        
+     
         public async Task<TaskItem?> GetTaskByIdAsync(string id) 
         {
             return await _taskRepositary.GetTaskByIdAsync(id);

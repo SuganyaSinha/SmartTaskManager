@@ -7,7 +7,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
 import { NewTask, TaskStatus } from "../types/common";
 import { postUserInput } from "../services/openAiService";
-import { getTasksForTheMonth, updateTask, deleteTask } from "../services/taskService";
+import { getTasks, updateTask, deleteTask } from "../services/taskService";
 import AudioInput from "./AudioInput";
 import TaskEditModal from "../components/TaskEditModal";
 import "./TaskCalendarView.css";
@@ -78,7 +78,14 @@ const TaskCalendarView = () => {
 
   const loadMonth = useCallback(async (date: Date) => {
     try {
-      const response = await getTasksForTheMonth(date.getFullYear(), date.getMonth() + 1);
+      // Calculate start date (first day of the month) and end date (first day of next month)
+      const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+      const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+      
+      const response = await getTasks({
+        start: startDate,
+        end: endDate,
+      });
       setEvents(
         response.map((task) => ({
           ...task,

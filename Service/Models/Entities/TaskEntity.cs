@@ -40,6 +40,7 @@ namespace SmartTaskManager.Models.Entities
 
         public enum TaskStatus
     {
+        All,
         NotStarted,
         InProgress,
         Completed,

@@ -5,7 +5,7 @@ import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { NewTask, TaskStatus } from "../types/common";
 import { postUserInput } from '../services/openAiService';
-import { getTasksForTheMonth, updateTask, deleteTask } from '../services/taskService';
+import { getTasks, updateTask, deleteTask } from '../services/taskService';
 import AudioInput from "./AudioInput";
 import TaskEditModal from "../components/TaskEditModal";
 import './TaskScheduler.css';
@@ -39,11 +39,15 @@ const TaskScheduler = () => {
 
       // Get user tasks for the current month
       const getTasksForTheSelectedMonth = useCallback (async (date : Date) => {
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
+        // Calculate start date (first day of the month) and end date (first day of next month)
+        const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
+        const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 1);
 
         try{
-            const response = await getTasksForTheMonth(year, month);
+            const response = await getTasks({
+              start: startDate,
+              end: endDate,
+            });
             console.log("API Response:", response);
             const formattedEvents = response.map(task => ({
               id: task.id,

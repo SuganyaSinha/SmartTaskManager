@@ -23,9 +23,7 @@ namespace SmartTaskManager.Repositary
         public async Task<List<TaskItem>> GetAllTasksAsync(string userId)
         {
             var taskEntities = await _taskCollection
-                .Find(t => t.UserId == userId &&
-                           (t.Status == SmartTaskManager.Models.Entities.TaskStatus.InProgress ||
-                            t.Status == SmartTaskManager.Models.Entities.TaskStatus.NotStarted))
+                .Find(t => t.UserId == userId)
                 .ToListAsync();
 
             return _mapper.Map<List<TaskItem>>(taskEntities);
@@ -40,35 +38,37 @@ namespace SmartTaskManager.Repositary
             {
                 mongoFilter &= filterBuilder.Regex(t => t.Title, new MongoDB.Bson.BsonRegularExpression(filter.Title, "i"));
             }
-            if (filter.Start.HasValue)
+            if (filter.Start.HasValue && filter.End.HasValue)
             {
-                mongoFilter &= filterBuilder.Gte(t => t.Start, filter.Start.Value);
+                mongoFilter &= filterBuilder.Lte(t => t.Start, filter.End.Value);
+                mongoFilter &= filterBuilder.Gte(t => t.End, filter.Start.Value);
             }
-            if (filter.End.HasValue)
+            else if (filter.Start.HasValue)
             {
-                mongoFilter &= filterBuilder.Lte(t => t.End, filter.End.Value);
+                mongoFilter &= filterBuilder.Gte(t => t.End, filter.Start.Value);
             }
-            mongoFilter &= filterBuilder.Eq(t => t.Status, (SmartTaskManager.Models.Entities.TaskStatus)filter.Status);
+            else if (filter.End.HasValue)
+            {
+                mongoFilter &= filterBuilder.Lte(t => t.Start, filter.End.Value);
+            }
 
-            var taskEntities = await _taskCollection
+            if(filter.Status != SmartTaskManager.Models.DTO.TaskStatus.All  )
+                mongoFilter &= filterBuilder.Eq(t => t.Status, (SmartTaskManager.Models.Entities.TaskStatus)filter.Status);
+
+            try
+            {
+                var taskEntities = await _taskCollection
                 .Find(mongoFilter)
                 .ToListAsync();
+                return _mapper.Map<List<TaskItem>>(taskEntities);
+            }
+            catch(Exception ex)
+            {
+                var msg = ex.Message;
+                throw;
+            }
 
-            return _mapper.Map<List<TaskItem>>(taskEntities);
         }
-
-        public async Task<List<TaskItem>> GetTasksByMonthAsync(string userId, int year, int month)
-        {
-            var taskEntities = await _taskCollection
-                .Find(t => t.UserId == userId &&
-                           t.Start.HasValue &&
-                           t.Start.Value.Year == year &&
-                           t.Start.Value.Month == month)
-                .ToListAsync();
-
-            return _mapper.Map<List<TaskItem>>(taskEntities);
-        }
-
         public async Task<TaskItem?> GetTaskByIdAsync(string id)
         {
             var taskEntity = await _taskCollection
@@ -97,12 +97,12 @@ namespace SmartTaskManager.Repositary
             }
             catch(Exception ex)
             {
-                var msg = ex.Message;           
+                var msg = ex.Message; 
+                throw;        
             }
             
             return _mapper.Map<TaskItem>(task) ;
         }
-            
 
         public async Task<TaskItem> UpdateTaskAsync(string id, string userId, TaskItem task){
 
@@ -124,7 +124,6 @@ namespace SmartTaskManager.Repositary
             return _mapper.Map<TaskItem>(existingTask);
         }
             
-
         public async Task<bool> DeleteTaskAsync(string id, string userId){
 
             var existingTask = await _taskCollection.Find(task => task.Id == id && task.UserId == userId).FirstOrDefaultAsync();

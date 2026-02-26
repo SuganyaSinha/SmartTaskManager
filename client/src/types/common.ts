@@ -21,6 +21,7 @@
 export type TaskPriority = "high" | "medium" | "low";
 
 export enum TaskStatus {
+  All = "All",
   NotStarted = "NotStarted",
   InProgress = "InProgress",
   Completed = "Completed",

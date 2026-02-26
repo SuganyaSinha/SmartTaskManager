@@ -19,23 +19,10 @@ namespace TaskManagerApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<TaskItem>>> GetAllTasks(){
-            var tasks = await _taskService.GetAllTasksAsync(UserId);
-            return Ok(tasks);
-        }
-
-        [HttpGet("test")]
         public async Task<ActionResult<List<TaskItem>>> GetTasks([FromQuery] TaskFilterRequest filter)
         {
             var userId = UserId;
             var tasks = await _taskService.GetTasksAsync(UserId, filter);
-            return Ok(tasks);
-        }
-
-        [HttpGet("month/{year}/{month}")]
-        public async Task<ActionResult<List<TaskItem>>> GetTasksByMonth(int year, int month)
-        {
-            var tasks = await _taskService.GetTasksByMonthAsync(UserId, year, month);
             return Ok(tasks);
         }
 
