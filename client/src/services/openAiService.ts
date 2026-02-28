@@ -10,7 +10,7 @@ export const postUserInput = async (input: string) : Promise<NewTask[]>=> {
     const currentDate = moment().format('YYYY-MM-DDTHH:mm:ssZ');
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    const response = await api.post('/api/openai/ask', {
+    const response = await api.post('/api/openai/smart-schedule', {
         userInput: input,
         currentDate: currentDate,
         timeZone: timeZone

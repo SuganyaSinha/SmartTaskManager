@@ -15,14 +15,17 @@ public class OpenAiController : BaseController
     private readonly IPromptService _promptService;
 
     private readonly AIPlannerService _aiPlannerService;
+    private readonly SmartSchedulerService _smartSchedulerService;
 
     public OpenAiController( OpenAiService openAiService,
                             IPromptService promptService,
-                            AIPlannerService aiPlannerService)
+                            AIPlannerService aiPlannerService,
+                            SmartSchedulerService smartSchedulerService)
     {
         _openAiService = openAiService;
         _promptService = promptService;
         _aiPlannerService = aiPlannerService;
+        _smartSchedulerService = smartSchedulerService;
     }
 
     [Authorize]
@@ -74,6 +77,42 @@ public class OpenAiController : BaseController
         // }
 
         return Ok(new { response });
+    }
+
+    /// <summary>
+    /// Server-side scheduling endpoint.
+    /// OpenAI is used only for intent extraction; all scheduling is deterministic C#.
+    /// Returns a scheduled-task plan in the same shape as /ask so the client can compare both.
+    /// </summary>
+    [Authorize]
+    [HttpPost("smart-schedule")]
+    public async Task<IActionResult> SmartSchedule([FromBody] OpenAiRequestBody request)
+    {
+        if (request == null)
+            return BadRequest("Request body is required.");
+        if (string.IsNullOrWhiteSpace(request.UserInput))
+            return BadRequest("UserInput cannot be empty.");
+        if (string.IsNullOrWhiteSpace(request.TimeZone))
+            return BadRequest("TimeZone is required.");
+        if (string.IsNullOrWhiteSpace(request.CurrentDate))
+            return BadRequest("CurrentDate is required.");
+
+        try
+        {
+            var scheduledTasks = await _smartSchedulerService.ScheduleTasksAsync(request, UserId);
+            var response = System.Text.Json.JsonSerializer.Serialize(scheduledTasks);
+            return Ok(new { response });
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return BadRequest(
+                $"Unknown TimeZone: '{request.TimeZone}'. " +
+                "Use a Windows TimeZone ID such as 'Eastern Standard Time'.");
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     private string AppendToThePrompt(string input)

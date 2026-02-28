@@ -69,6 +69,7 @@ builder.Services.AddScoped<IPromptService, PromptService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IUserRoutineService, UserRoutineService>();
 builder.Services.AddScoped<AIPlannerService>();
+builder.Services.AddScoped<SmartSchedulerService>();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
