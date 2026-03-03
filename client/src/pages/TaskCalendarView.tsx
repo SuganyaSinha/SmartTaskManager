@@ -5,7 +5,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
-import { NewTask, TaskStatus } from "../types/common";
+import { NewTask, TaskStatus, ScheduledTaskWithNotes } from "../types/common";
 import { postUserInput } from "../services/openAiService";
 import { getTasks, updateTask, deleteTask } from "../services/taskService";
 import AudioInput from "./AudioInput";
@@ -53,6 +53,7 @@ const TaskCalendarView = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [schedulingResults, setSchedulingResults] = useState<ScheduledTaskWithNotes[]>([]);
 
   const selectedTask = useMemo(
     () => events.find((e) => e.id === selectedTaskId) || null,
@@ -239,8 +240,10 @@ const TaskCalendarView = () => {
     if (!userInput.trim()) return;
     setIsLoading(true);
     setError(null);
+    setSchedulingResults([]);
     try {
       const response = await postUserInput(userInput);
+      setSchedulingResults(response);
       setEvents((prev) => [
         ...prev,
         ...response.map((task) => ({
@@ -301,6 +304,32 @@ const TaskCalendarView = () => {
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             {error}
+          </div>
+        )}
+
+        {schedulingResults.length > 0 && (
+          <div className="tcv-scheduling-results">
+            <h4 className="tcv-scheduling-results-title">Scheduled</h4>
+            {schedulingResults.map((task, i) => (
+              <div key={task.id ?? i} className="tcv-scheduling-result-item">
+                <div className="tcv-scheduling-result-task-title">
+                  {task.id ? (
+                    <a href={`/tasks/${task.id}`} className="tcv-scheduling-result-link">{task.title}</a>
+                  ) : (
+                    task.title
+                  )}
+                </div>
+                <div className="tcv-scheduling-result-time">
+                  {moment(task.start).format("MMM D, h:mm a")} &ndash; {moment(task.end).format("h:mm a")}
+                </div>
+                {task.isAllocatedOutsideRequestedTime && (
+                  <div className="tcv-scheduling-result-note">
+                    <span className="tcv-scheduling-result-note-icon">⚠</span>
+                    {task.allocationNote}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
 

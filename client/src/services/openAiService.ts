@@ -1,12 +1,21 @@
 import api from "./api"
-import { NewTask } from '../types/common';
+import { NewTask, ScheduledTaskWithNotes } from '../types/common';
 import { createTask } from "./taskService";
 import moment from "moment";
 
-export const postUserInput = async (input: string) : Promise<NewTask[]>=> {
-  try {
+// Matches the server's ScheduledTaskResult shape (System.Text.Json PascalCase)
+interface ServerScheduledTask {
+  Title: string;
+  Start: string;
+  End: string;
+  Priority: string;
+  Comments: string;
+  IsAllocatedOutsideRequestedTime: boolean;
+  AllocationNote: string;
+}
 
-    // Get response from openai api
+export const postUserInput = async (input: string): Promise<ScheduledTaskWithNotes[]> => {
+  try {
     const currentDate = moment().format('YYYY-MM-DDTHH:mm:ssZ');
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -18,16 +27,25 @@ export const postUserInput = async (input: string) : Promise<NewTask[]>=> {
         headers: { 'Content-Type': 'application/json' },
     });
 
-    const openAiTasks:NewTask[] = JSON.parse(response.data.response);
 
-      const results = await Promise.all(
-        openAiTasks.map(task => createTask({
-        ...task,
-        timezone: timeZone
-      }))
-      );
+    const serverTasks: ServerScheduledTask[] = JSON.parse(response.data.response);
 
-      return results;
+    const results = await Promise.all(
+      serverTasks.map(async (serverTask) => {
+        const created = await createTask({
+          ...(serverTask as unknown as NewTask),
+          timezone: timeZone
+        });
+
+        return {
+          ...created,
+          isAllocatedOutsideRequestedTime: serverTask.IsAllocatedOutsideRequestedTime,
+          allocationNote: serverTask.AllocationNote,
+        } as ScheduledTaskWithNotes;
+      })
+    );
+
+    return results;
 
   } catch (error) {
       console.error("postUserInput API call failed:", error);

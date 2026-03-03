@@ -455,6 +455,69 @@
   opacity: 0.75 !important;
 }
 
+/* ─── Scheduling results panel ─────────────────────────────────────────── */
+.tcv-scheduling-results {
+  overflow-y: auto;
+  max-height: 40vh;
+}
+
+.tcv-scheduling-results-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  margin: 0 0 8px 0;
+}
+
+.tcv-scheduling-result-item {
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+
+.tcv-scheduling-result-task-title {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tcv-scheduling-result-link {
+  color: #1e293b;
+  text-decoration: none;
+}
+
+.tcv-scheduling-result-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.tcv-scheduling-result-time {
+  color: #475569;
+  font-size: 0.78rem;
+}
+
+.tcv-scheduling-result-note {
+  margin-top: 5px;
+  padding: 4px 6px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 4px;
+  color: #92400e;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.tcv-scheduling-result-note-icon {
+  margin-right: 4px;
+}
+
 /* ─── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   /* Stack vertically: compact chat strip on top, calendar fills the rest */

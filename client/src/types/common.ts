@@ -39,6 +39,11 @@ export interface NewTask {
   timezone?: string;
 }
 
+export interface ScheduledTaskWithNotes extends NewTask {
+  isAllocatedOutsideRequestedTime: boolean;
+  allocationNote: string;
+}
+
 export interface Day {
     overloaded: boolean;
     tasks: Task[];
