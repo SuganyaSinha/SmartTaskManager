@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -8,7 +8,7 @@ import moment from "moment";
 import { NewTask, TaskStatus, ScheduledTaskWithNotes } from "../types/common";
 import { postUserInput } from "../services/openAiService";
 import { getTasks, updateTask, deleteTask } from "../services/taskService";
-import AudioInput from "./AudioInput";
+import AudioInput, { type AudioInputHandle } from "./AudioInput";
 import TaskEditModal from "../components/TaskEditModal";
 import "./TaskCalendarView.css";
 
@@ -46,6 +46,7 @@ const TaskCalendarView = () => {
 
   const calendarRef = useRef<FullCalendar>(null);
   const loadedMonthRef = useRef<{ year: number; month: number } | null>(null);
+  const audioInputRef = useRef<AudioInputHandle>(null);
 
   const [events, setEvents] = useState<NewTask[]>([]);
   const [userInput, setUserInput] = useState("");
@@ -238,6 +239,7 @@ const TaskCalendarView = () => {
   // ── AI input ──────────────────────────────────────────────────────────────
   const handleUserSubmit = async () => {
     if (!userInput.trim()) return;
+    audioInputRef.current?.stop();
     setIsLoading(true);
     setError(null);
     setSchedulingResults([]);
@@ -296,7 +298,7 @@ const TaskCalendarView = () => {
           )}
         </button>
 
-        <AudioInput onTranscriptChange={handleTranscriptChange} />
+        <AudioInput ref={audioInputRef} onTranscriptChange={handleTranscriptChange} />
 
         {error && (
           <div className="tcv-error">

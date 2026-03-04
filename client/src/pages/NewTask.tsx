@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { postUserInput } from '../services/openAiService';
-import AudioInput from './AudioInput';
+import AudioInput, { type AudioInputHandle } from './AudioInput';
 
 function NewTask() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const audioInputRef = useRef<AudioInputHandle>(null);
   const [userInput, setUserInput] = useState('');
   const [taskDate, setTaskDate] = useState('');
   const [taskTime, setTaskTime] = useState('');
@@ -39,7 +40,7 @@ function NewTask() {
 
   const handleUserSubmit = async () => {
     if (!userInput.trim()) return;
-
+    audioInputRef.current?.stop();
     setIsLoading(true);
     setError(null);
     setSuccess(false);
@@ -151,7 +152,7 @@ function NewTask() {
           {/* Voice input */}
           <div>
             <label className={labelClass}>Voice Input</label>
-            <AudioInput onTranscriptChange={handleTranscriptChange} />
+            <AudioInput ref={audioInputRef} onTranscriptChange={handleTranscriptChange} />
           </div>
 
           {/* Date + Time */}
