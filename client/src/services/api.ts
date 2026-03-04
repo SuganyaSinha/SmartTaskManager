@@ -8,7 +8,7 @@ export const setAuthTokenGetter = (fn: () => Promise<string>) => {
 };
 
 const api = axios.create({
-    baseURL: process.env.REACT_APP_STM_API_URL,
+    baseURL: import.meta.env.VITE_STM_API_URL,
     withCredentials: false,
 });
 

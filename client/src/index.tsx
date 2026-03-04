@@ -10,11 +10,11 @@ const root = ReactDOM.createRoot(
 );
 root.render(
     <Auth0Provider
-        domain={process.env.REACT_APP_DOMAIN!}
-        clientId={process.env.REACT_APP_CLIENT_ID!}
+        domain={import.meta.env.VITE_DOMAIN!}
+        clientId={import.meta.env.VITE_CLIENT_ID!}
         authorizationParams={{
         redirect_uri: window.location.origin,
-        audience : process.env.REACT_APP_AUDIENCE,
+        audience : import.meta.env.VITE_AUDIENCE,
         scope: "openid profile email"
         }}
          cacheLocation="localstorage"
