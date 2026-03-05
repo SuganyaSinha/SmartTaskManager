@@ -52,8 +52,11 @@ namespace SmartTaskManager.Repositary
                 mongoFilter &= filterBuilder.Lte(t => t.Start, filter.End.Value);
             }
 
-            if(filter.Status != SmartTaskManager.Models.DTO.TaskStatus.All  )
+            if(filter.Status != SmartTaskManager.Models.DTO.TaskStatus.All)
                 mongoFilter &= filterBuilder.Eq(t => t.Status, (SmartTaskManager.Models.Entities.TaskStatus)filter.Status);
+
+            if (!string.IsNullOrWhiteSpace(filter.Priority))
+                mongoFilter &= filterBuilder.Regex(t => t.Priority, new MongoDB.Bson.BsonRegularExpression($"^{filter.Priority}$", "i"));
 
             try
             {

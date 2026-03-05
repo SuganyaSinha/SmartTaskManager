@@ -20,8 +20,9 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       {/* Column headers — desktop only */}
       <div className="hidden sm:grid sm:grid-cols-12 sm:gap-4 px-4 py-2.5 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
-        <div className="col-span-6">Title</div>
-        <div className="col-span-3">Status</div>
+        <div className="col-span-5">Title</div>
+        <div className="col-span-2">Status</div>
+        <div className="col-span-2">Priority</div>
         <div className="col-span-3">Start Date</div>
       </div>
 

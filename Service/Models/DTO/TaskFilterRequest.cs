@@ -12,8 +12,11 @@ namespace SmartTaskManager.Models.DTO
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public TaskStatus Status { get; set; } = TaskStatus.All;
 
+        public string? Priority { get; set; }
+
         public bool IsEmpty =>
             string.IsNullOrWhiteSpace(Title) &&
+            string.IsNullOrWhiteSpace(Priority) &&
             End == null &&
             Start == null &&
             Status == TaskStatus.All;

@@ -33,7 +33,7 @@ export interface TaskFilter {
   title?: string;
   start?: Date;
   end?: Date;
-  priority?: number;
+  priority?: string;
 }
 
 export interface UserRoutine {
