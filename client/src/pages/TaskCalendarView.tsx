@@ -5,10 +5,8 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
-import { NewTask, TaskStatus, ScheduledTaskWithNotes } from "../types/common";
-import { postUserInput } from "../services/openAiService";
+import { NewTask, TaskStatus } from "../types/common";
 import { getTasks, updateTask, deleteTask } from "../services/taskService";
-import AudioInput, { type AudioInputHandle } from "./AudioInput";
 import TaskEditModal from "../components/TaskEditModal";
 import "./TaskCalendarView.css";
 
@@ -46,15 +44,11 @@ const TaskCalendarView = () => {
 
   const calendarRef = useRef<FullCalendar>(null);
   const loadedMonthRef = useRef<{ year: number; month: number } | null>(null);
-  const audioInputRef = useRef<AudioInputHandle>(null);
 
   const [events, setEvents] = useState<NewTask[]>([]);
-  const [userInput, setUserInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [schedulingResults, setSchedulingResults] = useState<ScheduledTaskWithNotes[]>([]);
 
   const selectedTask = useMemo(
     () => events.find((e) => e.id === selectedTaskId) || null,
@@ -80,14 +74,9 @@ const TaskCalendarView = () => {
 
   const loadMonth = useCallback(async (date: Date) => {
     try {
-      // Calculate start date (first day of the month) and end date (first day of next month)
       const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
       const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-      
-      const response = await getTasks({
-        start: startDate,
-        end: endDate,
-      });
+      const response = await getTasks({ start: startDate, end: endDate });
       setEvents(
         response.map((task) => ({
           ...task,
@@ -101,7 +90,6 @@ const TaskCalendarView = () => {
     }
   }, []);
 
-  // Initial load
   useEffect(() => {
     loadedMonthRef.current = {
       year: initialDate.getFullYear(),
@@ -110,7 +98,6 @@ const TaskCalendarView = () => {
     loadMonth(initialDate);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reload when calendar navigates to a new month
   const handleDatesSet = useCallback(
     (info: { start: Date; end: Date }) => {
       const center = new Date((info.start.getTime() + info.end.getTime()) / 2);
@@ -128,18 +115,12 @@ const TaskCalendarView = () => {
     [loadMonth]
   );
 
-  // ── Event click → open modal ──────────────────────────────────────────────
   const handleEventClick = (info: { event: { id: string } }) => {
-    // Close the "+N more" popover if one is open.
-    // FullCalendar closes its popover on any mousedown outside it, so
-    // dispatching a native mousedown on the document triggers that logic.
     document.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-
     setSelectedTaskId(info.event.id);
     setIsModalOpen(true);
   };
 
-  // ── Date slot click → navigate to NewTask ─────────────────────────────────
   const handleDateSelect = (info: { start: Date; view: { type: string } }) => {
     if (info.view.type === "dayGridMonth") {
       calendarRef.current?.getApi().changeView("timeGridDay", info.start);
@@ -151,7 +132,6 @@ const TaskCalendarView = () => {
     }
   };
 
-  // ── Drag-and-drop: event moved ────────────────────────────────────────────
   const handleEventDrop = async (info: {
     event: { id: string; start: Date | null; end: Date | null };
     revert: () => void;
@@ -176,7 +156,6 @@ const TaskCalendarView = () => {
     }
   };
 
-  // ── Drag-and-drop: event resized ──────────────────────────────────────────
   const handleEventResize = async (info: {
     event: { id: string; start: Date | null; end: Date | null };
     revert: () => void;
@@ -200,7 +179,6 @@ const TaskCalendarView = () => {
     }
   };
 
-  // ── Modal: save ───────────────────────────────────────────────────────────
   const handleUpdateTask = async (updatedTask: NewTask) => {
     if (!selectedTask?.id) return;
     try {
@@ -219,7 +197,6 @@ const TaskCalendarView = () => {
     }
   };
 
-  // ── Modal: delete ─────────────────────────────────────────────────────────
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteTask(taskId);
@@ -236,109 +213,17 @@ const TaskCalendarView = () => {
     setSelectedTaskId(null);
   };
 
-  // ── AI input ──────────────────────────────────────────────────────────────
-  const handleUserSubmit = async () => {
-    if (!userInput.trim()) return;
-    audioInputRef.current?.stop();
-    setIsLoading(true);
-    setError(null);
-    setSchedulingResults([]);
-    try {
-      const response = await postUserInput(userInput);
-      setSchedulingResults(response);
-      setEvents((prev) => [
-        ...prev,
-        ...response.map((task) => ({
-          ...task,
-          start: new Date(task.start),
-          end: new Date(task.end),
-          status: task.status as TaskStatus,
-        })),
-      ]);
-      setUserInput("");
-    } catch {
-      setError("Failed to generate schedule.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleTranscriptChange = useCallback((transcript: string) => {
-    setUserInput(transcript);
-  }, []);
-
   return (
     <div className="tcv-root">
-      {/* ── Sidebar ── */}
-      <aside className="tcv-sidebar">
-        <div className="tcv-sidebar-header">
-          <span className="tcv-sidebar-title">Task Scheduler</span>
-        </div>
-
-        <div className="tcv-input-section">
-          <label className="tcv-label">Describe your tasks</label>
-          <textarea
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            placeholder="e.g. Schedule a 2-hour meeting tomorrow at 10am and a code review Friday at 2pm"
-            className="tcv-textarea"
-          />
-        </div>
-
-        <button onClick={handleUserSubmit} disabled={isLoading} className="tcv-btn-generate">
-          {isLoading ? (
-            <>
-              <svg className="tcv-spinner" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="15 50" />
-              </svg>
-              Scheduling…
-            </>
-          ) : (
-            "Generate Schedule"
-          )}
-        </button>
-
-        <AudioInput ref={audioInputRef} onTranscriptChange={handleTranscriptChange} />
-
+      <main className="tcv-main">
         {error && (
-          <div className="tcv-error">
+          <div className="tcv-error" style={{ marginBottom: 8 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             {error}
           </div>
         )}
-
-        {schedulingResults.length > 0 && (
-          <div className="tcv-scheduling-results">
-            <h4 className="tcv-scheduling-results-title">Scheduled</h4>
-            {schedulingResults.map((task, i) => (
-              <div key={task.id ?? i} className="tcv-scheduling-result-item">
-                <div className="tcv-scheduling-result-task-title">
-                  {task.id ? (
-                    <a href={`/tasks/${task.id}`} className="tcv-scheduling-result-link">{task.title}</a>
-                  ) : (
-                    task.title
-                  )}
-                </div>
-                <div className="tcv-scheduling-result-time">
-                  {moment(task.start).format("MMM D, h:mm a")} &ndash; {moment(task.end).format("h:mm a")}
-                </div>
-                {task.isAllocatedOutsideRequestedTime && (
-                  <div className="tcv-scheduling-result-note">
-                    <span className="tcv-scheduling-result-note-icon">⚠</span>
-                    {task.allocationNote}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-      </aside>
-
-      {/* ── Calendar ── */}
-      <main className="tcv-main">
         <div className="tcv-legend">
           {LEGEND.map(({ label, color }) => (
             <div key={label} className="tcv-legend-item">

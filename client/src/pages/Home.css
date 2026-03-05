@@ -1,0 +1,182 @@
+/* ─── Tab navigation ──────────────────────────────────────────────────── */
+.home-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.home-tab {
+  flex: 1;
+  padding: 7px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.home-tab:hover {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.home-tab--active {
+  background: #ffffff;
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Overview panel ──────────────────────────────────────────────────── */
+.home-overview {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  /* Block layout — flex containers don't reliably trigger overflow-y scrollbars
+     and flex-shrink collapses small sections when siblings are tall */
+}
+
+/* ─── Stat cards ──────────────────────────────────────────────────────── */
+.home-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.home-stat-card {
+  border: 1.5px solid;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.home-stat-count {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.home-stat-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ─── Collapsible sections ────────────────────────────────────────────── */
+.home-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.home-section:last-child {
+  margin-bottom: 0;
+}
+
+.home-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.home-section-header:hover {
+  background: #f8fafc;
+}
+
+.home-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.home-section-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.home-section-badge--red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.home-section-badge--blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.home-section-chevron {
+  font-size: 0.6rem;
+  color: #94a3b8;
+}
+
+.home-empty-msg {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  padding: 12px 14px;
+  margin: 0;
+}
+
+.home-task-list {
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ─── Calendar panel ──────────────────────────────────────────────────── */
+.home-calendar-panel {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ─── List panel ──────────────────────────────────────────────────────── */
+.home-list-panel {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .home-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .home-tab {
+    padding: 6px 8px;
+    font-size: 0.72rem;
+  }
+}
