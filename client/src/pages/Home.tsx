@@ -16,6 +16,7 @@ import TaskList from "../components/TaskList";
 import TaskCard from "../components/TaskCard";
 import "./TaskCalendarView.css";
 import "./Home.css";
+import Landing from "./Landing";
 
 const STATUS_COLORS: Record<string, { bg: string; border: string }> = {
   [TaskStatus.Completed]:  { bg: "#22c55e", border: "#16a34a" },
@@ -279,7 +280,7 @@ function Home() {
   };
 
   if (!isAuthenticated) {
-    return <div />;
+    return <Landing />;
   }
 
   const hour = new Date().getHours();
