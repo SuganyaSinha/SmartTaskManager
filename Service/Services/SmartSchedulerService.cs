@@ -161,13 +161,16 @@ public class SmartSchedulerService
         return
             "You are a task intent parser. Your ONLY job is to extract structured task data from the user's message.\n" +
             $"Current date/time (user local time): {currentDate}\n\n" +
+            "IMPORTANT: The user may enter any kind of task — including software development work items such as " +
+            "\"fix the errors\", \"add filtering based on task priority\", \"unauthenticated user view\", " +
+            "\"write unit tests\", \"refactor login flow\", etc. These are valid tasks. Always create a task entry for them.\n\n" +
             "Return a compact JSON array. Each element must have EXACTLY these fields:\n" +
-            "- \"title\": string\n" +
+            "- \"title\": string (use the user's input as-is if it is a plain task name; clean up grammar only if needed)\n" +
             "- \"durationMinutes\": integer (default 60 if unspecified)\n" +
             "- \"priority\": \"high\" | \"medium\" | \"low\" (default \"medium\")\n" +
-            "- \"taskCategory\": \"work\" | \"personal\" (classify based on context: personal for health, family, hobbies, leisure; work for meetings, coding, reviews, reports; default \"work\")\n" +
-            "- \"requestedDate\": \"YYYY-MM-DD\" or null (resolve relative dates to concrete dates)\n" +
-            "- \"requestedTime\": \"HH:mm\" 24h or null\n" +
+            "- \"taskCategory\": \"work\" | \"personal\" (classify based on context: personal for health, family, hobbies, leisure; work for meetings, coding, reviews, bug fixes, features, reports; default \"work\")\n" +
+            "- \"requestedDate\": \"YYYY-MM-DD\" or null (resolve relative dates to concrete dates; use null if no date is mentioned)\n" +
+            "- \"requestedTime\": \"HH:mm\" 24h or null (use null if no time is mentioned)\n" +
             "- \"isRecurring\": boolean\n" +
             "- \"recurrenceType\": \"none\" | \"daily\" | \"weekly\" | \"monthly\"\n" +
             "- \"recurrenceCount\": integer (1 for non-recurring; reasonable number for recurring like 7 for daily-for-a-week)\n" +
@@ -175,6 +178,8 @@ public class SmartSchedulerService
             "Rules:\n" +
             $"- Resolve relative dates (\"tomorrow\", \"next Friday\", \"March 5th\") relative to {currentDate}.\n" +
             "- Validate calendar dates: never produce a date that does not exist (e.g. Feb 29 only exists in leap years; 2026 is NOT a leap year; always verify month/day combinations are valid).\n" +
+            "- If the input is a plain task description with no date or time, still create a task with requestedDate: null and requestedTime: null.\n" +
+            "- Never return an empty array. Any user input that describes a task or work item must produce at least one entry.\n" +
             "- Do NOT make scheduling decisions. Do NOT check conflicts. Only extract intent.\n" +
             "- Return ONLY a raw JSON array. No markdown, no explanations.";
     }
