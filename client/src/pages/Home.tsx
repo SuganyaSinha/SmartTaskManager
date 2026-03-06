@@ -4,7 +4,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
 import { NewTask, TaskStatus, ScheduledTaskWithNotes, TaskFilter as TaskFilterType } from "../types/common";
 import { postUserInput } from "../services/openAiService";
@@ -44,6 +44,7 @@ type RightPanel = "overview" | "calendar" | "list";
 function Home() {
   const { isAuthenticated, user } = useAuth0();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const calendarRef = useRef<FullCalendar>(null);
   const audioInputRef = useRef<AudioInputHandle>(null);
@@ -57,18 +58,71 @@ function Home() {
   const [schedulingError, setSchedulingError] = useState<string | null>(null);
   const [schedulingResults, setSchedulingResults] = useState<ScheduledTaskWithNotes[]>([]);
 
-  // Right panel
-  const [rightPanel, setRightPanel] = useState<RightPanel>("overview");
+  // Right panel — persisted in URL so back navigation restores the active tab
+  const rawTab = searchParams.get("tab");
+  const rightPanel: RightPanel = (rawTab === "calendar" || rawTab === "list") ? rawTab : "overview";
+
+  const setRightPanel = (panel: RightPanel) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("tab", panel);
+      return next;
+    }, { replace: true });
+  };
+
   const [overdueExpanded, setOverdueExpanded] = useState(true);
   const [upcomingExpanded, setUpcomingExpanded] = useState(true);
+
+  // Calendar view — persisted in URL so switching tabs doesn't reset the view
+  const calViewParam = searchParams.get("calview") ?? "timeGridWeek";
+
+  const handleCalViewChange = useCallback(
+    (info: { view: { type: string } }) => {
+      const newType = info.view.type;
+      setSearchParams((prev) => {
+        if (prev.get("calview") === newType) return prev;
+        const next = new URLSearchParams(prev);
+        next.set("calview", newType);
+        return next;
+      }, { replace: true });
+    },
+    [setSearchParams]
+  );
 
   // Calendar modal
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [calendarError, setCalendarError] = useState<string | null>(null);
 
-  // List panel
-  const [listFilters, setListFilters] = useState<TaskFilterType>({});
+  // List filters — persisted in URL so back navigation restores filter state
+  const listFilters: TaskFilterType = useMemo(() => {
+    const f: TaskFilterType = {};
+    const status = searchParams.get("status");
+    if (status) f.status = status as TaskFilterType["status"];
+    const title = searchParams.get("ftitle");
+    if (title) f.title = title;
+    const priority = searchParams.get("priority");
+    if (priority) f.priority = priority;
+    const start = searchParams.get("fstart");
+    if (start) f.start = new Date(start);
+    const end = searchParams.get("fend");
+    if (end) f.end = new Date(end);
+    return f;
+  }, [searchParams]);
+
+  const setListFilters = (next: TaskFilterType) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.delete("status"); params.delete("ftitle"); params.delete("priority"); params.delete("fstart"); params.delete("fend");
+      if (next.status) params.set("status", next.status);
+      if (next.title) params.set("ftitle", next.title);
+      if (next.priority) params.set("priority", next.priority);
+      if (next.start) params.set("fstart", next.start.toISOString());
+      if (next.end) params.set("fend", next.end.toISOString());
+      return params;
+    }, { replace: true });
+  };
+
   const [listTasks, setListTasks] = useState<NewTask[]>([]);
 
   // Load all tasks on mount
@@ -448,7 +502,7 @@ function Home() {
               <FullCalendar
                 ref={calendarRef}
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
+                initialView={calViewParam}
                 headerToolbar={{
                   left: "prev,next today",
                   center: "title",
@@ -466,6 +520,7 @@ function Home() {
                 eventDisplay="block"
                 slotMinTime="06:00:00"
                 slotMaxTime="23:00:00"
+                datesSet={handleCalViewChange}
                 eventClick={handleEventClick}
                 select={handleDateSelect}
                 eventDrop={handleEventDrop}
