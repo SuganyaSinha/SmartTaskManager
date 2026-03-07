@@ -14,43 +14,53 @@ public class AIPlannerService
     private readonly Kernel _kernel;
     private readonly ITaskRepository _taskRepositary;
     private readonly IUserRoutineRepositary _userRoutineRepositary;
+    private readonly ILogger<AIPlannerService> _logger;
 
     public AIPlannerService(Kernel kernel,
                             ITaskRepository taskRepositary,
-                            IUserRoutineRepositary userRoutineRepositary)
+                            IUserRoutineRepositary userRoutineRepositary,
+                            ILogger<AIPlannerService> logger)
     {
         _kernel = kernel;
         _taskRepositary = taskRepositary;
         _userRoutineRepositary = userRoutineRepositary;
+        _logger = logger;
     }
 
     public async Task<string> GenerateTaskAsync(OpenAiRequestBody input, string userId)
     {
-        var chatCompletionService  = _kernel.GetRequiredService<IChatCompletionService>();
-        string existingTasksJson = await GetExistingTasksForTheUser(userId, input.TimeZone);
-        string routineSummary = await GetUserRoutine(userId);
-        
+        try
+        {
+            var chatCompletionService  = _kernel.GetRequiredService<IChatCompletionService>();
+            string existingTasksJson = await GetExistingTasksForTheUser(userId, input.TimeZone);
+            string routineSummary = await GetUserRoutine(userId);
 
-        var chatHistory = new ChatHistory();
-        chatHistory.AddSystemMessage(GetInitialSystemPromptNew()
-                                    .Replace("[INSERT_EXISTING_TASKS_HERE]", existingTasksJson)
-                                    .Replace("[INSERT_ROUTINE_SUMMARY_HERE]", routineSummary)
-                                    .Replace("[currentDate]", input.CurrentDate)
-                                    .Replace("[currentTimeZone]", input.TimeZone)
-                                    );
+            var chatHistory = new ChatHistory();
+            chatHistory.AddSystemMessage(GetInitialSystemPromptNew()
+                                        .Replace("[INSERT_EXISTING_TASKS_HERE]", existingTasksJson)
+                                        .Replace("[INSERT_ROUTINE_SUMMARY_HERE]", routineSummary)
+                                        .Replace("[currentDate]", input.CurrentDate)
+                                        .Replace("[currentTimeZone]", input.TimeZone)
+                                        );
 
-        chatHistory.AddUserMessage(input.UserInput);
+            chatHistory.AddUserMessage(input.UserInput);
 
-        var result = await chatCompletionService.GetChatMessageContentAsync(
-                                                chatHistory,
-                                                new OpenAIPromptExecutionSettings
-                                                {
-                                                    MaxTokens = 200
-                                                },
-                                                _kernel
-                            );
-        string output = result.Content!;
-        return output;
+            var result = await chatCompletionService.GetChatMessageContentAsync(
+                                                    chatHistory,
+                                                    new OpenAIPromptExecutionSettings
+                                                    {
+                                                        MaxTokens = 200
+                                                    },
+                                                    _kernel
+                                );
+            string output = result.Content!;
+            return output;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating task plan for user {UserId}", userId);
+            throw;
+        }
     //     KernelFunction systemPromptFunction = _kernel.CreateFunctionFromPrompt(
     //         GetInitialSystemPrompt(),
     //         functionName: "CreateInitialSystemPrompt",
@@ -236,6 +246,8 @@ Now schedule the tasks from the user's message using the rules above and output 
 
     private async Task<string> GetExistingTasksForTheUser(string userId, string userTimeZone)
     {
+        try
+        {
         var now = DateTime.UtcNow;
 
         var startRange = now.AddDays(-5);
@@ -386,5 +398,11 @@ Now schedule the tasks from the user's message using the rules above and output 
                             groupedTasks, new JsonSerializerOptions { WriteIndented = true });
 
         return jsonString;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching existing tasks for user {UserId}", userId);
+            throw;
+        }
     }
 }

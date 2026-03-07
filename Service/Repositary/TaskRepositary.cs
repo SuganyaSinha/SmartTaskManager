@@ -12,21 +12,31 @@ namespace SmartTaskManager.Repositary
         private readonly MongoDbContext _context;
         private readonly IMapper _mapper;
         private readonly IMongoCollection<SmartTaskManager.Models.Entities.TaskEntity> _taskCollection;
+        private readonly ILogger<TaskRepositary> _logger;
 
-        public TaskRepositary(MongoDbContext context, IMapper mapper)
+        public TaskRepositary(MongoDbContext context, IMapper mapper, ILogger<TaskRepositary> logger)
         {
             _context = context;
             _mapper = mapper;
             _taskCollection = _context.TaskCollection;
+            _logger = logger;
         }
 
         public async Task<List<TaskItem>> GetAllTasksAsync(string userId)
         {
-            var taskEntities = await _taskCollection
-                .Find(t => t.UserId == userId)
-                .ToListAsync();
+            try
+            {
+                var taskEntities = await _taskCollection
+                    .Find(t => t.UserId == userId)
+                    .ToListAsync();
 
-            return _mapper.Map<List<TaskItem>>(taskEntities);
+                return _mapper.Map<List<TaskItem>>(taskEntities);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching all tasks for user {UserId}", userId);
+                throw;
+            }
         }
 
         public async Task<List<TaskItem>> GetTasksAsync(string userId, TaskFilterRequest filter)
@@ -65,23 +75,31 @@ namespace SmartTaskManager.Repositary
                 .ToListAsync();
                 return _mapper.Map<List<TaskItem>>(taskEntities);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                var msg = ex.Message;
+                _logger.LogError(ex, "Error fetching filtered tasks for user {UserId}", userId);
                 throw;
             }
 
         }
         public async Task<TaskItem?> GetTaskByIdAsync(string id)
         {
-            var taskEntity = await _taskCollection
-                            .Find(task => task.Id == id)
-                            .FirstOrDefaultAsync();
-            
-            if (taskEntity == null)
-                return null;
-                
-            return _mapper.Map<TaskItem>(taskEntity);
+            try
+            {
+                var taskEntity = await _taskCollection
+                                .Find(task => task.Id == id)
+                                .FirstOrDefaultAsync();
+
+                if (taskEntity == null)
+                    return null;
+
+                return _mapper.Map<TaskItem>(taskEntity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching task {TaskId}", id);
+                throw;
+            }
         }
 
         public async Task<TaskItem> CreateTaskAsync(CreateTaskItem task, string userId){
@@ -98,10 +116,10 @@ namespace SmartTaskManager.Repositary
                 
                 await _taskCollection.InsertOneAsync(taskEntity); 
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                var msg = ex.Message; 
-                throw;        
+                _logger.LogError(ex, "Error creating task for user {UserId}", userId);
+                throw;
             }
             
             return _mapper.Map<TaskItem>(task) ;
@@ -109,22 +127,30 @@ namespace SmartTaskManager.Repositary
 
         public async Task<TaskItem> UpdateTaskAsync(string id, string userId, TaskItem task){
 
-            var existingTask = await _taskCollection.Find(t => t.Id == id && t.UserId == userId).FirstOrDefaultAsync();
-            if (existingTask == null)
+            try
             {
-                throw new Exception("Task not found or you don't have permission");
+                var existingTask = await _taskCollection.Find(t => t.Id == id && t.UserId == userId).FirstOrDefaultAsync();
+                if (existingTask is null)
+                {
+                    throw new Exception("Task not found or you don't have permission");
+                }
+
+                existingTask.Title = task.Title ?? existingTask.Title;
+                existingTask.Start = task.Start ?? existingTask.Start;
+                existingTask.End = task.End ?? existingTask.End;
+                existingTask.Priority = task.Priority ?? existingTask.Priority;
+                existingTask.Comments = task.Comments ?? existingTask.Comments;
+                existingTask.Status = (SmartTaskManager.Models.Entities.TaskStatus) task.Status;
+                existingTask.LastUpdated = DateTime.UtcNow;
+
+                await _taskCollection.ReplaceOneAsync(t => t.Id == id, existingTask);
+                return _mapper.Map<TaskItem>(existingTask);
             }
-
-            existingTask.Title = task.Title ?? existingTask.Title;
-            existingTask.Start = task.Start ?? existingTask.Start;
-            existingTask.End = task.End ?? existingTask.End;
-            existingTask.Priority = task.Priority ?? existingTask.Priority;
-            existingTask.Comments = task.Comments ?? existingTask.Comments;
-            existingTask.Status = (SmartTaskManager.Models.Entities.TaskStatus) task.Status;
-            existingTask.LastUpdated = DateTime.UtcNow;
-
-            await _taskCollection.ReplaceOneAsync(t => t.Id == id, existingTask);
-            return _mapper.Map<TaskItem>(existingTask);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating task {TaskId} for user {UserId}", id, userId);
+                throw;
+            }
         }
             
         public async Task<bool> DeleteTaskAsync(string id, string userId){

@@ -49,15 +49,18 @@ public class SmartSchedulerService
     private readonly Kernel _kernel;
     private readonly ITaskRepository _taskRepository;
     private readonly IUserRoutineRepositary _userRoutineRepository;
+    private readonly ILogger<SmartSchedulerService> _logger;
 
     public SmartSchedulerService(
         Kernel kernel,
         ITaskRepository taskRepository,
-        IUserRoutineRepositary userRoutineRepository)
+        IUserRoutineRepositary userRoutineRepository,
+        ILogger<SmartSchedulerService> logger)
     {
         _kernel                = kernel               ?? throw new ArgumentNullException(nameof(kernel));
         _taskRepository        = taskRepository       ?? throw new ArgumentNullException(nameof(taskRepository));
         _userRoutineRepository = userRoutineRepository ?? throw new ArgumentNullException(nameof(userRoutineRepository));
+        _logger                = logger               ?? throw new ArgumentNullException(nameof(logger));
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -68,57 +71,65 @@ public class SmartSchedulerService
         OpenAiRequestBody input,
         string userId)
     {
-        if (input == null)
-            throw new ArgumentNullException(nameof(input));
-        if (string.IsNullOrWhiteSpace(userId))
-            throw new ArgumentException("UserId is required.", nameof(userId));
-        if (string.IsNullOrWhiteSpace(input.UserInput))
-            throw new ArgumentException("UserInput cannot be empty.");
-
-        // Throws TimeZoneNotFoundException for unknown IDs (caught by controller)
-        TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(input.TimeZone);
-
-        if (!DateTime.TryParse(input.CurrentDate, out DateTime currentLocalTime))
-            throw new ArgumentException(
-                $"Invalid CurrentDate format: '{input.CurrentDate}'. Expected yyyy-MM-ddTHH:mm");
-        currentLocalTime = DateTime.SpecifyKind(currentLocalTime, DateTimeKind.Unspecified);
-
-        // ── Phase 1: Parse intent via OpenAI ─────────────────────────────
-        List<ParsedTaskRequest> parsedTasks =
-            await ExtractIntentAsync(input.UserInput, input.CurrentDate);
-
-        if (parsedTasks == null || parsedTasks.Count == 0)
-            return new List<ScheduledTaskResult>();
-
-        // ── Phase 2: Load existing schedule and user routine ──────────────
-        var (allBlocks, usedMinutesPerDay) = await LoadExistingBlocksAsync(userId, tz);
-        RoutineProfile? routine = await _userRoutineRepository.GetUserRoutineAsync(userId);
-
-        // ── Phase 3: Schedule deterministically ──────────────────────────
-        // High-priority tasks get first pick of available slots.
-        var prioritized = parsedTasks.OrderBy(PriorityOrder).ToList();
-        var results     = new List<ScheduledTaskResult>();
-
-        foreach (var parsed in prioritized)
+        try
         {
-            int duration = Math.Max(parsed.DurationMinutes, 1);
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+            if (string.IsNullOrWhiteSpace(input.UserInput))
+                throw new ArgumentException("UserInput cannot be empty.");
 
-            if (parsed.IsRecurring && parsed.RecurrenceType != "none")
+            // Throws TimeZoneNotFoundException for unknown IDs (caught by controller)
+            TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(input.TimeZone);
+
+            if (!DateTime.TryParse(input.CurrentDate, out DateTime currentLocalTime))
+                throw new ArgumentException(
+                    $"Invalid CurrentDate format: '{input.CurrentDate}'. Expected yyyy-MM-ddTHH:mm");
+            currentLocalTime = DateTime.SpecifyKind(currentLocalTime, DateTimeKind.Unspecified);
+
+            // ── Phase 1: Parse intent via OpenAI ─────────────────────────────
+            List<ParsedTaskRequest> parsedTasks =
+                await ExtractIntentAsync(input.UserInput, input.CurrentDate);
+
+            if (parsedTasks == null || parsedTasks.Count == 0)
+                return new List<ScheduledTaskResult>();
+
+            // ── Phase 2: Load existing schedule and user routine ──────────────
+            var (allBlocks, usedMinutesPerDay) = await LoadExistingBlocksAsync(userId, tz);
+            RoutineProfile? routine = await _userRoutineRepository.GetUserRoutineAsync(userId);
+
+            // ── Phase 3: Schedule deterministically ──────────────────────────
+            // High-priority tasks get first pick of available slots.
+            var prioritized = parsedTasks.OrderBy(PriorityOrder).ToList();
+            var results     = new List<ScheduledTaskResult>();
+
+            foreach (var parsed in prioritized)
             {
-                var recurring = ScheduleRecurring(
-                    parsed, duration, currentLocalTime, routine, allBlocks, usedMinutesPerDay);
-                results.AddRange(recurring);
+                int duration = Math.Max(parsed.DurationMinutes, 1);
+
+                if (parsed.IsRecurring && parsed.RecurrenceType != "none")
+                {
+                    var recurring = ScheduleRecurring(
+                        parsed, duration, currentLocalTime, routine, allBlocks, usedMinutesPerDay);
+                    results.AddRange(recurring);
+                }
+                else
+                {
+                    var single = ScheduleSingle(
+                        parsed, duration, currentLocalTime, routine, allBlocks, usedMinutesPerDay);
+                    if (single != null)
+                        results.Add(single);
+                }
             }
-            else
-            {
-                var single = ScheduleSingle(
-                    parsed, duration, currentLocalTime, routine, allBlocks, usedMinutesPerDay);
-                if (single != null)
-                    results.Add(single);
-            }
+
+            return results;
         }
-
-        return results;
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error scheduling tasks for user {UserId}", userId);
+            throw;
+        }
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -150,8 +161,7 @@ public class SmartSchedulerService
         }
         catch (JsonException ex)
         {
-            Console.Error.WriteLine(
-                $"[SmartSchedulerService] Intent JSON parse failed: {ex.Message}\nRaw: {raw}");
+            _logger.LogError(ex, "Intent JSON parse failed. Raw response: {Raw}", raw);
             return new List<ParsedTaskRequest>();
         }
     }

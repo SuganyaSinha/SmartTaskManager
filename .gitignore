@@ -32,4 +32,5 @@ Service/appsettings.json
 Service/appsettings.Development.json
 Service/appsettings.Production.json
 Service/*.log
+Service/logs/
 Service/publish/
