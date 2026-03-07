@@ -1,9 +1,9 @@
 // components/TaskCard.tsx
-import { Link } from 'react-router-dom';
 import { NewTask } from "../types/common";
 
 interface TaskCardProps {
   task: NewTask;
+  onClick: (task: NewTask) => void;
 }
 
 const statusColorMap: Record<string, string> = {
@@ -19,7 +19,7 @@ const priorityColorMap: Record<string, string> = {
   low:    "bg-green-100 text-green-700",
 };
 
-const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
   const startDate = new Date(task.start).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
@@ -33,17 +33,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
     : "—";
 
   return (
-    <div className="border-b last:border-b-0 hover:bg-gray-50 transition-colors">
+    <div
+      className="border-b last:border-b-0 hover:bg-gray-50 transition-colors cursor-pointer"
+      onClick={() => onClick(task)}
+    >
 
       {/* Mobile layout */}
       <div className="sm:hidden px-4 py-3">
         <div className="flex items-start justify-between gap-2 mb-1.5">
-          <Link
-            to={`/tasks/${task.id}`}
-            className="text-blue-600 hover:underline font-medium text-sm leading-snug"
-          >
+          <span className="text-blue-600 font-medium text-sm leading-snug">
             {task.title}
-          </Link>
+          </span>
           <div className="flex gap-1 flex-shrink-0">
             <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${priorityClass}`}>
               {priorityLabel}
@@ -59,12 +59,9 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
       {/* Desktop layout */}
       <div className="hidden sm:grid sm:grid-cols-12 sm:items-center sm:gap-4 px-4 py-3">
         <div className="col-span-5 truncate">
-          <Link
-            to={`/tasks/${task.id}`}
-            className="text-blue-600 hover:underline font-medium"
-          >
+          <span className="text-blue-600 font-medium">
             {task.title}
-          </Link>
+          </span>
         </div>
         <div className="col-span-2">
           <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${statusClass}`}>

@@ -12,14 +12,12 @@ import TaskCalendarView from './pages/TaskCalendarView';
 import NewTask from './pages/NewTask';
 import Callback from './pages/Callback';
 import TaskPage from './pages/TaskPage';
-import TaskDetail from './pages/TaskDetail';
 import { UserRoutine } from './pages/UserRoutine';
 
 const ProtectedNewTask = withAuthenticationRequired(NewTask);
 const ProtectedTaskScheduler = withAuthenticationRequired(TaskScheduler);
 const ProtectedTaskCalendarView = withAuthenticationRequired(TaskCalendarView);
 const ProtectedTaskPage = withAuthenticationRequired(TaskPage);
-const ProtectedTaskDetail = withAuthenticationRequired(TaskDetail);
 const ProtectedUserRoutine = withAuthenticationRequired(UserRoutine);
 
 function AuthTokenSetup() {
@@ -47,7 +45,6 @@ function App() {
             <Route path="/Calendar" element={<ProtectedTaskScheduler />} />
             <Route path="/CalendarNew" element={<ProtectedTaskCalendarView />} />
             <Route path="/Task" element={<ProtectedTaskPage />} />
-            <Route path="/tasks/:id" element={<ProtectedTaskDetail />} />
 
             {/* Auth0 callback */}
             <Route path="/callback" element={<Callback />} />

@@ -89,10 +89,15 @@ function Home() {
     [setSearchParams]
   );
 
-  // Calendar modal
+  // Modal — shared across calendar, overdue/upcoming cards, list, and scheduler results
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [calendarError, setCalendarError] = useState<string | null>(null);
+
+  const handleTaskClick = useCallback((task: NewTask) => {
+    setSelectedTaskId(task.id!);
+    setIsModalOpen(true);
+  }, []);
 
   // List filters — persisted in URL so back navigation restores filter state
   const listFilters: TaskFilterType = useMemo(() => {
@@ -310,6 +315,7 @@ function Home() {
         status: apiResponse.status as TaskStatus,
       };
       setTasks((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
+      setListTasks((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
       setIsModalOpen(false);
       setSelectedTaskId(null);
     } catch {
@@ -321,6 +327,7 @@ function Home() {
     try {
       await deleteTask(taskId);
       setTasks((prev) => prev.filter((e) => e.id !== taskId));
+      setListTasks((prev) => prev.filter((e) => e.id !== taskId));
       setIsModalOpen(false);
       setSelectedTaskId(null);
     } catch {
@@ -390,7 +397,11 @@ function Home() {
               <div key={task.id ?? i} className="tcv-scheduling-result-item">
                 <div className="tcv-scheduling-result-task-title">
                   {task.id ? (
-                    <a href={`/tasks/${task.id}`} className="tcv-scheduling-result-link">{task.title}</a>
+                    <span
+                      className="tcv-scheduling-result-link"
+                      onClick={() => handleTaskClick(task as NewTask)}
+                      style={{ cursor: 'pointer' }}
+                    >{task.title}</span>
                   ) : task.title}
                 </div>
                 <div className="tcv-scheduling-result-time">
@@ -450,7 +461,7 @@ function Home() {
                   <p className="home-empty-msg">No overdue tasks.</p>
                 ) : (
                   <div className="home-task-list">
-                    {overdueTasks.map((task) => <TaskCard key={task.id} task={task} />)}
+                    {overdueTasks.map((task) => <TaskCard key={task.id} task={task} onClick={handleTaskClick} />)}
                   </div>
                 )
               )}
@@ -471,7 +482,7 @@ function Home() {
                   <p className="home-empty-msg">No upcoming tasks.</p>
                 ) : (
                   <div className="home-task-list">
-                    {upcomingTasks.map((task) => <TaskCard key={task.id} task={task} />)}
+                    {upcomingTasks.map((task) => <TaskCard key={task.id} task={task} onClick={handleTaskClick} />)}
                   </div>
                 )
               )}
@@ -534,7 +545,7 @@ function Home() {
         {rightPanel === "list" && (
           <div className="home-list-panel">
             <TaskFilter value={listFilters} onChange={setListFilters} />
-            <TaskList tasks={listTasks} />
+            <TaskList tasks={listTasks} onTaskClick={handleTaskClick} />
           </div>
         )}
       </main>

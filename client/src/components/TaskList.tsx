@@ -4,9 +4,10 @@ import TaskCard from "./TaskCard";
 
 interface TaskListProps {
   tasks: NewTask[];
+  onTaskClick: (task: NewTask) => void;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
+const TaskList: React.FC<TaskListProps> = ({ tasks, onTaskClick }) => {
   if (tasks.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-6 py-12 text-center">
@@ -27,7 +28,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
       </div>
 
       {tasks.map(task => (
-        <TaskCard key={task.id} task={task} />
+        <TaskCard key={task.id} task={task} onClick={onTaskClick} />
       ))}
     </div>
   );
