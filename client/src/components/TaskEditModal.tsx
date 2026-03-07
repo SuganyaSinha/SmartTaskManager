@@ -22,13 +22,30 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string; activeText
   low:    { label: 'Low',    color: '#22c55e', activeText: '#fff' },
 };
 
-// Convert a Date to the value format datetime-local expects (local time, no offset)
-const toLocalInput = (date: Date | string): string => {
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${String(h).padStart(2, '0')}:${m}`;
+});
+
+const toDatePart = (date?: Date | string): string => {
+  if (!date) return '';
   const d = new Date(date);
   if (isNaN(d.getTime())) return '';
-  const offset = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+
+const toTimePart = (date?: Date | string): string => {
+  if (!date) return '00:00';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '00:00';
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = d.getMinutes() >= 30 ? '30' : '00';
+  return `${h}:${m}`;
+};
+
+const combineDateTime = (datePart: string, timePart: string): Date =>
+  new Date(`${datePart}T${timePart || '00:00'}:00`);
 
 const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, onDelete, isOpen }) => {
   const [edited, setEdited] = useState<NewTask | null>(task);
@@ -183,23 +200,41 @@ const TaskEditModal: React.FC<TaskEditModalProps> = ({ task, onClose, onSave, on
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div>
               <FieldLabel>Start</FieldLabel>
-              <DateInput
-                value={toLocalInput(edited.start)}
-                onChange={(v) => {
-                  const newStart = v ? new Date(v) : edited.start;
+              <DateTimeInput
+                date={toDatePart(edited.start)}
+                time={toTimePart(edited.start)}
+                onDateChange={(d) => {
+                  const newStart = d ? combineDateTime(d, toTimePart(edited.start)) : edited.start;
                   setTimeError(validateTimes(newStart, edited.end));
                   setEdited({ ...edited, start: newStart });
+                }}
+                onTimeChange={(t) => {
+                  const d = toDatePart(edited.start);
+                  if (d) {
+                    const newStart = combineDateTime(d, t);
+                    setTimeError(validateTimes(newStart, edited.end));
+                    setEdited({ ...edited, start: newStart });
+                  }
                 }}
               />
             </div>
             <div>
               <FieldLabel>End</FieldLabel>
-              <DateInput
-                value={toLocalInput(edited.end)}
-                onChange={(v) => {
-                  const newEnd = v ? new Date(v) : edited.end;
+              <DateTimeInput
+                date={toDatePart(edited.end)}
+                time={toTimePart(edited.end)}
+                onDateChange={(d) => {
+                  const newEnd = d ? combineDateTime(d, toTimePart(edited.end)) : edited.end;
                   setTimeError(validateTimes(edited.start, newEnd));
                   setEdited({ ...edited, end: newEnd });
+                }}
+                onTimeChange={(t) => {
+                  const d = toDatePart(edited.end);
+                  if (d) {
+                    const newEnd = combineDateTime(d, t);
+                    setTimeError(validateTimes(edited.start, newEnd));
+                    setEdited({ ...edited, end: newEnd });
+                  }
                 }}
               />
             </div>
@@ -342,27 +377,55 @@ const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </label>
 );
 
-const DateInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-  <input
-    type="datetime-local"
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    style={{
-      width: '100%', fontSize: '0.78rem', color: '#334155',
-      border: '1.5px solid #e2e8f0', borderRadius: '8px',
-      padding: '8px 10px', outline: 'none',
-      transition: 'border-color 0.15s, box-shadow 0.15s',
-      boxSizing: 'border-box', fontFamily: 'inherit',
-    }}
-    onFocus={(e) => {
-      e.target.style.borderColor = '#3b82f6';
-      e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
-    }}
-    onBlur={(e) => {
-      e.target.style.borderColor = '#e2e8f0';
-      e.target.style.boxShadow = 'none';
-    }}
-  />
+const inputStyle: React.CSSProperties = {
+  fontSize: '0.78rem', color: '#334155',
+  border: '1.5px solid #e2e8f0', borderRadius: '8px',
+  padding: '8px 10px', outline: 'none',
+  transition: 'border-color 0.15s, box-shadow 0.15s',
+  boxSizing: 'border-box', fontFamily: 'inherit',
+};
+
+const focusStyle = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.target.style.borderColor = '#3b82f6';
+  e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+};
+const blurStyle = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.target.style.borderColor = '#e2e8f0';
+  e.target.style.boxShadow = 'none';
+};
+
+const DateTimeInput: React.FC<{
+  date: string; time: string;
+  onDateChange: (d: string) => void;
+  onTimeChange: (t: string) => void;
+}> = ({ date, time, onDateChange, onTimeChange }) => (
+  <div style={{ display: 'flex', gap: '6px' }}>
+    <input
+      type="date"
+      value={date}
+      onChange={(e) => onDateChange(e.target.value)}
+      style={{ ...inputStyle, flex: 1 }}
+      onFocus={focusStyle}
+      onBlur={blurStyle}
+    />
+    <select
+      value={time}
+      onChange={(e) => onTimeChange(e.target.value)}
+      disabled={!date}
+      style={{
+        ...inputStyle, width: '80px', padding: '8px 6px',
+        background: date ? '#fff' : '#f8fafc',
+        color: date ? '#334155' : '#94a3b8',
+        cursor: date ? 'pointer' : 'default',
+      }}
+      onFocus={focusStyle}
+      onBlur={blurStyle}
+    >
+      {TIME_SLOTS.map((slot) => (
+        <option key={slot} value={slot}>{slot}</option>
+      ))}
+    </select>
+  </div>
 );
 
 export default TaskEditModal;
