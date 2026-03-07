@@ -16,19 +16,28 @@ const priorityColorMap: Record<string, string> = {
   low:    'bg-green-100 text-green-700',
 };
 
-// Convert UTC date to local timezone format for datetime-local input
-const formatToLocalDateTime = (date: Date | string): string => {
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${String(h).padStart(2, '0')}:${m}`;
+});
+
+const toDatePart = (date: Date | string): string => {
   const d = new Date(date);
   if (isNaN(d.getTime())) return '';
-  const offset = d.getTimezoneOffset() * 60000;
-  const localDate = new Date(d.getTime() - offset);
-  return localDate.toISOString().slice(0, 16);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// Convert local datetime input back to UTC Date object
-const formatToUTC = (localDateTime: string): Date => {
-  if (!localDateTime) return new Date();
-  return new Date(localDateTime);
+const toTimePart = (date: Date | string): string => {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '00:00';
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = d.getMinutes() >= 30 ? '30' : '00';
+  return `${h}:${m}`;
+};
+
+const combineDateTime = (datePart: string, timePart: string): Date => {
+  return new Date(`${datePart}T${timePart || '00:00'}:00`);
 };
 
 const validateTimes = (start?: Date, end?: Date): string => {
@@ -237,18 +246,33 @@ const TaskDetail: React.FC = () => {
                 {isEditing ? (
                   <>
                     <label className="block text-sm font-medium text-gray-700">Start Date/Time</label>
-                    <input
-                      type="datetime-local"
-                      value={formatToLocalDateTime(editedTask!.start)}
-                      onChange={(e) => {
-                        const newStart = e.target.value
-                          ? formatToUTC(e.target.value)
-                          : editedTask!.start;
-                        setTimeError(validateTimes(newStart, editedTask!.end));
-                        setEditedTask({ ...editedTask!, start: newStart });
-                      }}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                    />
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="date"
+                        value={toDatePart(editedTask!.start)}
+                        onChange={(e) => {
+                          const newStart = e.target.value
+                            ? combineDateTime(e.target.value, toTimePart(editedTask!.start))
+                            : editedTask!.start;
+                          setTimeError(validateTimes(newStart, editedTask!.end));
+                          setEditedTask({ ...editedTask!, start: newStart });
+                        }}
+                        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
+                      />
+                      <select
+                        value={toTimePart(editedTask!.start)}
+                        onChange={(e) => {
+                          const newStart = combineDateTime(toDatePart(editedTask!.start), e.target.value);
+                          setTimeError(validateTimes(newStart, editedTask!.end));
+                          setEditedTask({ ...editedTask!, start: newStart });
+                        }}
+                        className="w-24 rounded-md border border-gray-300 px-2 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
+                      >
+                        {TIME_SLOTS.map((slot) => (
+                          <option key={slot} value={slot}>{slot}</option>
+                        ))}
+                      </select>
+                    </div>
                   </>
                 ) : (
                   <>
@@ -261,18 +285,33 @@ const TaskDetail: React.FC = () => {
                 {isEditing ? (
                   <>
                     <label className="block text-sm font-medium text-gray-700">End Date/Time</label>
-                    <input
-                      type="datetime-local"
-                      value={formatToLocalDateTime(editedTask!.end)}
-                      onChange={(e) => {
-                        const newEnd = e.target.value
-                          ? formatToUTC(e.target.value)
-                          : editedTask!.end;
-                        setTimeError(validateTimes(editedTask!.start, newEnd));
-                        setEditedTask({ ...editedTask!, end: newEnd });
-                      }}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                    />
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="date"
+                        value={toDatePart(editedTask!.end)}
+                        onChange={(e) => {
+                          const newEnd = e.target.value
+                            ? combineDateTime(e.target.value, toTimePart(editedTask!.end))
+                            : editedTask!.end;
+                          setTimeError(validateTimes(editedTask!.start, newEnd));
+                          setEditedTask({ ...editedTask!, end: newEnd });
+                        }}
+                        className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
+                      />
+                      <select
+                        value={toTimePart(editedTask!.end)}
+                        onChange={(e) => {
+                          const newEnd = combineDateTime(toDatePart(editedTask!.end), e.target.value);
+                          setTimeError(validateTimes(editedTask!.start, newEnd));
+                          setEditedTask({ ...editedTask!, end: newEnd });
+                        }}
+                        className="w-24 rounded-md border border-gray-300 px-2 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
+                      >
+                        {TIME_SLOTS.map((slot) => (
+                          <option key={slot} value={slot}>{slot}</option>
+                        ))}
+                      </select>
+                    </div>
                   </>
                 ) : (
                   <>
