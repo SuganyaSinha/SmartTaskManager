@@ -34,3 +34,9 @@ Service/appsettings.Production.json
 Service/*.log
 Service/logs/
 Service/publish/
+
+Service.Tests/bin/
+Service.Tests/obj/
+Service.Tests/*.user
+Service.Tests/*.suo
+Service.Tests/TestResults/
