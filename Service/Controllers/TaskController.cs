@@ -29,6 +29,9 @@ namespace TaskManagerApi.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTaskById(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest("Task ID is required.");
+
             var task = await _taskService.GetTaskByIdAsync(id);
             return task == null ? NotFound() : Ok(task);
         }
@@ -36,6 +39,12 @@ namespace TaskManagerApi.Controllers
         [HttpPost]
         public async Task<ActionResult<TaskItem>> CreateTask([FromBody]CreateTaskItem task)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (task.Start.HasValue && task.End.HasValue && task.End <= task.Start)
+                return BadRequest("End date/time must be after Start date/time.");
+
             var createdTask = await _taskService.CreateTaskAsync(UserId, task);
             return CreatedAtAction(nameof(GetTaskById), new { id = createdTask.Id }, createdTask);
         }
@@ -43,6 +52,18 @@ namespace TaskManagerApi.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<TaskItem>> UpdateTask(string id, [FromBody]TaskItem task)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest("Task ID is required.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (!string.IsNullOrWhiteSpace(task.Id) && task.Id != id)
+                return BadRequest("Task ID in the body does not match the route ID.");
+
+            if (task.Start.HasValue && task.End.HasValue && task.End <= task.Start)
+                return BadRequest("End date/time must be after Start date/time.");
+
             var updatedTask = await _taskService.UpdateTaskAsync(id, UserId, task);
             return Ok(updatedTask);
         }
@@ -50,6 +71,12 @@ namespace TaskManagerApi.Controllers
         [HttpPatch("{id}")]
         public async Task<ActionResult<TaskItem>> PatchTask(string id, [FromBody]TaskItem taskUpdate)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest("Task ID is required.");
+
+            if (taskUpdate.Start.HasValue && taskUpdate.End.HasValue && taskUpdate.End <= taskUpdate.Start)
+                return BadRequest("End date/time must be after Start date/time.");
+
             try
             {
                 var patchedTask = await _taskService.PatchTaskAsync(id, UserId, taskUpdate);
@@ -64,6 +91,9 @@ namespace TaskManagerApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest("Task ID is required.");
+
             var result = await _taskService.DeleteTaskAsync(id, UserId);
             if (!result)
             {

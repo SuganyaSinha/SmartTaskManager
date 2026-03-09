@@ -28,6 +28,23 @@ namespace TaskManagerApi.Controllers
         [HttpPost]
         public async Task<ActionResult<RoutineProfile>> CreateUserRoutine([FromBody]RoutineProfile routine)
         {
+            if (routine == null)
+                return BadRequest("Request body is required.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (TimeSpan.TryParse(routine.WakeUpTime, out var wakeUp) &&
+                TimeSpan.TryParse(routine.SleepTime, out var sleep) &&
+                sleep <= wakeUp)
+                return BadRequest("SleepTime must be after WakeUpTime.");
+
+            if (routine.WorkStyleSettings != null &&
+                TimeSpan.TryParse(routine.WorkStyleSettings.WorkHourStart, out var workStart) &&
+                TimeSpan.TryParse(routine.WorkStyleSettings.WorkHourEnd, out var workEnd) &&
+                workEnd <= workStart)
+                return BadRequest("WorkHourEnd must be after WorkHourStart.");
+
             var createdRoutine = await _userRoutineService.CreateUserRoutineAsync(UserId, routine);
             return CreatedAtAction(nameof(GetUserRoutine), new { id = createdRoutine.Id }, createdRoutine);
         }
@@ -35,6 +52,23 @@ namespace TaskManagerApi.Controllers
         [HttpPut]
         public async Task<ActionResult<RoutineProfile>> UpdateUserRoutine([FromBody]RoutineProfile routine)
         {
+            if (routine == null)
+                return BadRequest("Request body is required.");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (TimeSpan.TryParse(routine.WakeUpTime, out var wakeUp) &&
+                TimeSpan.TryParse(routine.SleepTime, out var sleep) &&
+                sleep <= wakeUp)
+                return BadRequest("SleepTime must be after WakeUpTime.");
+
+            if (routine.WorkStyleSettings != null &&
+                TimeSpan.TryParse(routine.WorkStyleSettings.WorkHourStart, out var workStart) &&
+                TimeSpan.TryParse(routine.WorkStyleSettings.WorkHourEnd, out var workEnd) &&
+                workEnd <= workStart)
+                return BadRequest("WorkHourEnd must be after WorkHourStart.");
+
             var updatedRoutine = await _userRoutineService.UpdateUserRoutineAsync(UserId, routine);
             return Ok(updatedRoutine);
         }

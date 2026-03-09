@@ -32,10 +32,12 @@ public class OpenAiController : BaseController
     [HttpPost("ask")]
     public async Task<IActionResult> AskOpenAi([FromBody] OpenAiRequestBody request)
     {
-        if (string.IsNullOrWhiteSpace(request.UserInput))
-        {
-            return BadRequest("Prompt cannot be empty.");
-        }
+        if (request == null)
+            return BadRequest("Request body is required.");
+
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         //var response = await _openAiService.GetResponseAsync(request, UserId);
         var response = await _aiPlannerService.GenerateTaskAsync(request, UserId);
 
@@ -90,12 +92,16 @@ public class OpenAiController : BaseController
     {
         if (request == null)
             return BadRequest("Request body is required.");
-        if (string.IsNullOrWhiteSpace(request.UserInput))
-            return BadRequest("UserInput cannot be empty.");
+
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         if (string.IsNullOrWhiteSpace(request.TimeZone))
             return BadRequest("TimeZone is required.");
         if (string.IsNullOrWhiteSpace(request.CurrentDate))
             return BadRequest("CurrentDate is required.");
+        if (!DateTime.TryParse(request.CurrentDate, out _))
+            return BadRequest("CurrentDate is not a valid date.");
 
         try
         {
