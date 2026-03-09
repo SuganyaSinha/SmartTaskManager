@@ -15,7 +15,7 @@ namespace SmartTaskManager.Models.DTO
         public DateTime? Start { get; set; }
         public DateTime? End { get; set; }
 
-        [RegularExpression("^(Low|Medium|High)$", ErrorMessage = "Priority must be Low, Medium, or High.")]
+        [RegularExpression("^(low|medium|high)$", ErrorMessage = "Priority must be Low, Medium, or High.")]
         public string? Priority { get; set; }
 
         [MaxLength(1000, ErrorMessage = "Comments cannot exceed 1000 characters.")]
