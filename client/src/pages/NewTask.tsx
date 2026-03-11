@@ -1,226 +1,417 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { postUserInput } from '../services/openAiService';
-import AudioInput, { type AudioInputHandle } from './AudioInput';
+import { createTask } from '../services/taskService';
+import { TaskStatus } from '../types/common';
+
+/* ── Helpers (same as TaskEditModal) ── */
+
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2);
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${String(h).padStart(2, '0')}:${m}`;
+});
+
+const toTimePart = (value: string): string => {
+  if (!value) return '00:00';
+  const [h, m] = value.split(':').map(Number);
+  return `${String(h).padStart(2, '0')}:${m >= 30 ? '30' : '00'}`;
+};
+
+/* ── Sub-components (same style as TaskEditModal) ── */
+
+const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <label style={{
+    display: 'block', fontSize: '0.68rem', fontWeight: 700,
+    color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px',
+  }}>
+    {children}
+  </label>
+);
+
+const inputStyle: React.CSSProperties = {
+  fontSize: '0.78rem', color: '#334155',
+  border: '1.5px solid #e2e8f0', borderRadius: '8px',
+  padding: '8px 10px', outline: 'none',
+  transition: 'border-color 0.15s, box-shadow 0.15s',
+  boxSizing: 'border-box', fontFamily: 'inherit',
+};
+
+const focusStyle = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.target.style.borderColor = '#3b82f6';
+  e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+};
+const blurStyle = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  e.target.style.borderColor = '#e2e8f0';
+  e.target.style.boxShadow = 'none';
+};
+
+const DateTimeInput: React.FC<{
+  date: string; time: string;
+  onDateChange: (d: string) => void;
+  onTimeChange: (t: string) => void;
+}> = ({ date, time, onDateChange, onTimeChange }) => (
+  <div style={{ display: 'flex', gap: '6px' }}>
+    <input
+      type="date"
+      value={date}
+      onChange={(e) => onDateChange(e.target.value)}
+      style={{ ...inputStyle, flex: 1 }}
+      onFocus={focusStyle}
+      onBlur={blurStyle}
+    />
+    <select
+      value={time}
+      onChange={(e) => onTimeChange(e.target.value)}
+      disabled={!date}
+      style={{
+        ...inputStyle, width: '80px', padding: '8px 6px',
+        background: date ? '#fff' : '#f8fafc',
+        color: date ? '#334155' : '#94a3b8',
+        cursor: date ? 'pointer' : 'default',
+      }}
+      onFocus={focusStyle}
+      onBlur={blurStyle}
+    >
+      {TIME_SLOTS.map((slot) => (
+        <option key={slot} value={slot}>{slot}</option>
+      ))}
+    </select>
+  </div>
+);
+
+type StatusCfg = { label: string; color: string; bg: string; text: string };
+const STATUS_CONFIG: Record<string, StatusCfg> = {
+  [TaskStatus.NotStarted]: { label: 'Not Started', color: '#f59e0b', bg: '#fffbeb', text: '#92400e' },
+  [TaskStatus.InProgress]: { label: 'In Progress', color: '#3b82f6', bg: '#eff6ff', text: '#1e40af' },
+  [TaskStatus.Completed]:  { label: 'Completed',   color: '#22c55e', bg: '#f0fdf4', text: '#166534' },
+  [TaskStatus.Blocked]:    { label: 'Blocked',     color: '#ef4444', bg: '#fef2f2', text: '#991b1b' },
+};
+
+const PRIORITY_CONFIG: Record<string, { label: string; color: string; activeText: string }> = {
+  high:   { label: 'High',   color: '#ef4444', activeText: '#fff' },
+  medium: { label: 'Medium', color: '#f59e0b', activeText: '#fff' },
+  low:    { label: 'Low',    color: '#22c55e', activeText: '#fff' },
+};
+
+import React from 'react';
 
 function NewTask() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const audioInputRef = useRef<AudioInputHandle>(null);
-  const [userInput, setUserInput] = useState('');
-  const [taskDate, setTaskDate] = useState('');
-  const [taskTime, setTaskTime] = useState('');
+
+  const [title, setTitle] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [startTime, setStartTime] = useState('09:00');
+  const [endDate, setEndDate] = useState('');
+  const [endTime, setEndTime] = useState('10:00');
   const [priority, setPriority] = useState('medium');
+  const [status, setStatus] = useState<TaskStatus>(TaskStatus.NotStarted);
+  const [comments, setComments] = useState('');
+  const [category, setCategory] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timeError, setTimeError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Initialize date and time from URL parameters
   useEffect(() => {
     const date = searchParams.get('date');
     const time = searchParams.get('time');
-
     if (date) {
-      setTaskDate(date);
+      setStartDate(date);
+      setEndDate(date);
     }
     if (time) {
-      setTaskTime(time);
+      const snapped = toTimePart(time);
+      setStartTime(snapped);
+      // Default end to 1 hour later
+      const [h] = snapped.split(':').map(Number);
+      setEndTime(`${String((h + 1) % 24).padStart(2, '0')}:${snapped.split(':')[1]}`);
     }
   }, [searchParams]);
 
   const handleCancel = () => {
     const view = searchParams.get('view') || 'month';
-    navigate(`/Calendar?view=${view}`);
+    navigate(`/CalendarNew?view=${view}`);
   };
 
-  // Callback to update userInput with transcript from AudioInput
-  const handleTranscriptChange = useCallback((transcript: string) => {
-    setUserInput(transcript);
-  }, []);
+  const validateTimes = (sd: string, st: string, ed: string, et: string) => {
+    if (!sd || !ed) return '';
+    const start = new Date(`${sd}T${st}`);
+    const end = new Date(`${ed}T${et}`);
+    if (end <= start) return 'End time must be after start time';
+    return '';
+  };
 
-  const handleUserSubmit = async () => {
-    if (!userInput.trim()) return;
-    audioInputRef.current?.stop();
+  const handleStartDateChange = (d: string) => {
+    setStartDate(d);
+    if (!endDate) setEndDate(d);
+    setTimeError(validateTimes(d, startTime, endDate || d, endTime));
+  };
+
+  const handleStartTimeChange = (t: string) => {
+    setStartTime(t);
+    setTimeError(validateTimes(startDate, t, endDate, endTime));
+  };
+
+  const handleEndDateChange = (d: string) => {
+    setEndDate(d);
+    setTimeError(validateTimes(startDate, startTime, d, endTime));
+  };
+
+  const handleEndTimeChange = (t: string) => {
+    setEndTime(t);
+    setTimeError(validateTimes(startDate, startTime, endDate, t));
+  };
+
+  const handleSubmit = async () => {
+    if (!title.trim()) { setError('Title is required.'); return; }
+    if (!startDate) { setError('Start date is required.'); return; }
+    if (!endDate) { setError('End date is required.'); return; }
+    const te = validateTimes(startDate, startTime, endDate, endTime);
+    if (te) { setTimeError(te); return; }
+
     setIsLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      let finalInput = userInput;
+      await createTask({
+        title: title.trim(),
+        start: `${startDate}T${startTime}:00` as unknown as Date,
+        end: `${endDate}T${endTime}:00` as unknown as Date,
+        priority,
+        status,
+        comments: comments.trim(),
+        category: category.trim() || undefined,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
 
-      // Append date and time to input if provided
-      if (taskDate || taskTime) {
-        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-        if (taskDate && taskTime) {
-          const dateTimeString = `${taskDate}T${taskTime}`;
-          const localDateTime = new Date(dateTimeString);
-          const timeString = localDateTime.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            timeZone: userTimezone
-          });
-          finalInput += ` - Schedule the task for: ${taskDate} at ${timeString}`;
-        } else if (taskDate) {
-          finalInput += ` - Schedule the task for: ${taskDate}`;
-        } else if (taskTime) {
-          const timeString = taskTime;
-          finalInput += ` - Schedule the task for: ${timeString}`;
-        }
-      }
-
-      // Append priority if it's not the default
-      if (priority && priority !== 'medium') {
-        finalInput += ` - user preferred priority: ${priority}`;
-      }
-
-      const response = await postUserInput(finalInput);
-      console.log("API Response:", response);
       setSuccess(true);
-
-      // Determine the view and date to redirect to based on the response
-      let redirectView = 'month';
-      let redirectDate = new Date().toISOString().split('T')[0]; // Default to today
-
-      if (response && response.length > 0) {
-        // Extract dates from response tasks (convert from UTC to local date)
-        const taskDates = new Set<string>();
-
-        response.forEach((task: any) => {
-          const taskStart = new Date(task.start);
-          // Convert UTC date to local date string (YYYY-MM-DD)
-          const localDate = new Date(taskStart.getTime() - taskStart.getTimezoneOffset() * 60000)
-            .toISOString()
-            .split('T')[0];
-          taskDates.add(localDate);
-        });
-
-        const uniqueDates = Array.from(taskDates);
-
-        if (uniqueDates.length === 1) {
-          // Single task or all tasks on the same day -> day view
-          redirectView = 'day';
-          redirectDate = uniqueDates[0];
-        } else {
-          // Multiple tasks on different days -> week view
-          redirectView = 'week';
-          redirectDate = uniqueDates[0]; // Use the first task's date
-        }
-      }
-
-      // Reset form
-      setUserInput('');
-      setTaskDate('');
-      setTaskTime('');
-      setPriority('medium');
-
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        navigate(`/Calendar?view=${redirectView}&date=${redirectDate}`);
-      }, 2000);
+      setTimeout(() => navigate(`/CalendarNew?view=day&date=${startDate}`), 1500);
     } catch (err) {
       console.error('Failed to create task:', err);
-      setError("Could not get data. Error in handleSubmit");
+      setError('Failed to create task. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const inputClass = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent";
-  const labelClass = "block text-xs font-medium text-gray-600 mb-1";
-
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
       <div className="max-w-xl">
-
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Create New Task</h1>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
+        <div style={{
+          background: '#ffffff', borderRadius: '16px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+          overflow: 'hidden',
+        }}>
+          {/* Status colour strip */}
+          <div style={{ height: '4px', background: STATUS_CONFIG[status]?.color ?? '#e2e8f0' }} />
 
-          {/* Task description */}
-          <div>
-            <label className={labelClass}>Task Description</label>
-            <textarea
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              placeholder="Describe the task..."
-              rows={4}
-              className={inputClass}
-            />
-          </div>
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-          {/* Voice input */}
-          <div>
-            <label className={labelClass}>Voice Input</label>
-            <AudioInput ref={audioInputRef} onTranscriptChange={handleTranscriptChange} />
-          </div>
-
-          {/* Date + Time */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Title */}
             <div>
-              <label className={labelClass}>Date (Optional)</label>
+              <FieldLabel>Title <span style={{ color: '#ef4444' }}>*</span></FieldLabel>
               <input
-                type="date"
-                value={taskDate}
-                onChange={(e) => setTaskDate(e.target.value)}
-                className={inputClass}
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Task title"
+                style={{ ...inputStyle, width: '100%' }}
+                onFocus={focusStyle}
+                onBlur={blurStyle}
               />
             </div>
+
+            {/* Status pills */}
             <div>
-              <label className={labelClass}>Time (Optional)</label>
+              <FieldLabel>Status</FieldLabel>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {(Object.keys(STATUS_CONFIG) as TaskStatus[]).map((s) => {
+                  const cfg = STATUS_CONFIG[s]!;
+                  const active = status === s;
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setStatus(s)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        padding: '5px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600,
+                        border: `1.5px solid ${active ? cfg.color : 'transparent'}`,
+                        background: active ? cfg.color : cfg.bg,
+                        color: active ? '#ffffff' : cfg.text,
+                        cursor: 'pointer', transition: 'all 0.15s',
+                        boxShadow: active ? `0 2px 6px ${cfg.color}44` : 'none',
+                      }}
+                    >
+                      <span style={{
+                        width: '6px', height: '6px', borderRadius: '50%',
+                        background: active ? 'rgba(255,255,255,0.7)' : cfg.color, flexShrink: 0,
+                      }} />
+                      {cfg.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Priority toggles */}
+            <div>
+              <FieldLabel>Priority</FieldLabel>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {Object.entries(PRIORITY_CONFIG).map(([p, cfg]) => {
+                  const active = priority === p;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setPriority(p)}
+                      style={{
+                        flex: 1, padding: '6px', borderRadius: '8px',
+                        fontSize: '0.78rem', fontWeight: 600,
+                        border: `2px solid ${cfg.color}`,
+                        background: active ? cfg.color : '#fff',
+                        color: active ? cfg.activeText : cfg.color,
+                        cursor: 'pointer', transition: 'all 0.15s',
+                        boxShadow: active ? `0 2px 8px ${cfg.color}44` : 'none',
+                      }}
+                    >
+                      {cfg.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Date / time */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div>
+                <FieldLabel>Start <span style={{ color: '#ef4444' }}>*</span></FieldLabel>
+                <DateTimeInput
+                  date={startDate}
+                  time={startTime}
+                  onDateChange={handleStartDateChange}
+                  onTimeChange={handleStartTimeChange}
+                />
+              </div>
+              <div>
+                <FieldLabel>End <span style={{ color: '#ef4444' }}>*</span></FieldLabel>
+                <DateTimeInput
+                  date={endDate}
+                  time={endTime}
+                  onDateChange={handleEndDateChange}
+                  onTimeChange={handleEndTimeChange}
+                />
+              </div>
+            </div>
+            {timeError && (
+              <p style={{ margin: '-8px 0 0', fontSize: '0.75rem', color: '#dc2626' }}>{timeError}</p>
+            )}
+
+            {/* Category */}
+            <div>
+              <FieldLabel>Category</FieldLabel>
               <input
-                type="time"
-                value={taskTime}
-                onChange={(e) => setTaskTime(e.target.value)}
-                className={inputClass}
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g. Work, Personal"
+                style={{ ...inputStyle, width: '100%' }}
+                onFocus={focusStyle}
+                onBlur={blurStyle}
               />
             </div>
+
+            {/* Comments */}
+            <div>
+              <FieldLabel>Notes</FieldLabel>
+              <textarea
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                rows={3}
+                placeholder="Add notes or description…"
+                style={{
+                  width: '100%', fontSize: '0.82rem', color: '#334155',
+                  border: '1.5px solid #e2e8f0', borderRadius: '8px',
+                  padding: '9px 11px', resize: 'vertical', outline: 'none',
+                  transition: 'border-color 0.15s, box-shadow 0.15s',
+                  boxSizing: 'border-box', lineHeight: 1.55, fontFamily: 'inherit',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#3b82f6';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e2e8f0';
+                  e.target.style.boxShadow = 'none';
+                }}
+              />
+            </div>
+
+            {/* Error / Success banners */}
+            {error && (
+              <div style={{
+                background: '#fef2f2', border: '1.5px solid #fecaca',
+                borderRadius: '8px', padding: '10px 14px',
+                fontSize: '0.82rem', color: '#991b1b',
+              }}>
+                {error}
+              </div>
+            )}
+            {success && (
+              <div style={{
+                background: '#f0fdf4', border: '1.5px solid #bbf7d0',
+                borderRadius: '8px', padding: '10px 14px',
+                fontSize: '0.82rem', color: '#166534',
+              }}>
+                Task created successfully! Redirecting…
+              </div>
+            )}
           </div>
 
-          {/* Priority */}
-          <div>
-            <label className={labelClass}>Priority (Optional)</label>
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className={inputClass}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-
-          {/* Error / Success banners */}
-          {error && (
-            <div className="rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-600">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="rounded-md bg-green-50 border border-green-200 px-4 py-2 text-sm text-green-700">
-              Task created successfully! Redirecting...
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center gap-3 pt-1">
-            <button
-              onClick={handleUserSubmit}
-              disabled={isLoading}
-              className="px-5 py-2 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600 disabled:opacity-50"
-            >
-              {isLoading ? 'Creating...' : 'Create Task'}
-            </button>
+          {/* Footer */}
+          <div style={{
+            display: 'flex', justifyContent: 'flex-end', gap: '8px',
+            padding: '14px 20px', borderTop: '1px solid #f1f5f9', background: '#f8fafc',
+          }}>
             <button
               onClick={handleCancel}
               disabled={isLoading}
-              className="px-5 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded hover:bg-gray-300 disabled:opacity-50"
+              style={{
+                padding: '8px 16px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
+                background: '#fff', color: '#64748b', border: '1.5px solid #e2e8f0',
+                cursor: isLoading ? 'default' : 'pointer', opacity: isLoading ? 0.5 : 1,
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => { if (!isLoading) (e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#fff'; }}
             >
               Cancel
             </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              style={{
+                padding: '8px 20px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
+                background: '#3b82f6', color: '#fff', border: 'none',
+                cursor: isLoading ? 'default' : 'pointer', opacity: isLoading ? 0.5 : 1,
+                boxShadow: '0 1px 3px rgba(59,130,246,0.35)', transition: 'background 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading) {
+                  (e.currentTarget as HTMLButtonElement).style.background = '#2563eb';
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = '#3b82f6';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 3px rgba(59,130,246,0.35)';
+              }}
+            >
+              {isLoading ? 'Creating…' : 'Create Task'}
+            </button>
           </div>
-
         </div>
       </div>
     </div>
