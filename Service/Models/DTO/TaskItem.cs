@@ -24,5 +24,11 @@ namespace SmartTaskManager.Models.DTO
         public string? UserId { get; set; }
 
         public TaskStatus Status { get; set; } = TaskStatus.NotStarted;
+
+        public DateTime? CompletedAt { get; set; }
+
+        public DateTime? LastUpdated { get; set; }
+
+        public string? Category { get; set; }
     }
 }

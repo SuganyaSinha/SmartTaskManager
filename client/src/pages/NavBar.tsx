@@ -74,6 +74,9 @@ const NavBar = () => {
               <NavLink to="/CalendarNew" className={({ isActive }) => `stm-nav-link${isActive ? ' stm-nav-active' : ''}`}>
                 Calendar
               </NavLink>
+              <NavLink to="/Productivity" className={({ isActive }) => `stm-nav-link${isActive ? ' stm-nav-active' : ''}`}>
+                Productivity
+              </NavLink>
               <NavLink to="/NewTask" className="stm-nav-link stm-nav-new">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -186,6 +189,7 @@ const NavBar = () => {
           <Link to="/" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Home</Link>
           <Link to="/Task" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Tasks</Link>
           <Link to="/CalendarNew" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Calendar</Link>
+          <Link to="/Productivity" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Productivity</Link>
           <Link to="/NewTask" className="stm-mobile-link stm-mobile-link-new" onClick={() => setMobileMenuOpen(false)}>
             + New Task
           </Link>

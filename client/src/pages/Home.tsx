@@ -17,6 +17,7 @@ import TaskCard from "../components/TaskCard";
 import "./TaskCalendarView.css";
 import "./Home.css";
 import Landing from "./Landing";
+import ProductivityPage from "./ProductivityPage";
 
 const STATUS_COLORS: Record<string, { bg: string; border: string }> = {
   [TaskStatus.Completed]:  { bg: "#22c55e", border: "#16a34a" },
@@ -39,7 +40,7 @@ const STAT_CARDS = [
   { status: TaskStatus.Blocked,    label: "Blocked",     color: "#ef4444", bg: "#fef2f2", border: "#fecaca" },
 ];
 
-type RightPanel = "overview" | "calendar" | "list";
+type RightPanel = "overview" | "calendar" | "list" | "productivity";
 
 function Home() {
   const { isAuthenticated, user } = useAuth0();
@@ -60,7 +61,7 @@ function Home() {
 
   // Right panel — persisted in URL so back navigation restores the active tab
   const rawTab = searchParams.get("tab");
-  const rightPanel: RightPanel = (rawTab === "calendar" || rawTab === "list") ? rawTab : "overview";
+  const rightPanel: RightPanel = (rawTab === "calendar" || rawTab === "list" || rawTab === "productivity") ? rawTab : "overview";
 
   const setRightPanel = (panel: RightPanel) => {
     setSearchParams((prev) => {
@@ -423,13 +424,13 @@ function Home() {
       <main className="tcv-main">
         {/* Tab navigation */}
         <div className="home-tabs">
-          {(["overview", "calendar", "list"] as RightPanel[]).map((panel) => (
+          {(["overview", "calendar", "list", "productivity"] as RightPanel[]).map((panel) => (
             <button
               key={panel}
               onClick={() => setRightPanel(panel)}
               className={`home-tab${rightPanel === panel ? " home-tab--active" : ""}`}
             >
-              {panel === "overview" ? "Overview" : panel === "calendar" ? "Calendar" : "Task List"}
+              {panel === "overview" ? "Overview" : panel === "calendar" ? "Calendar" : panel === "list" ? "Task List" : "Productivity"}
             </button>
           ))}
         </div>
@@ -546,6 +547,13 @@ function Home() {
           <div className="home-list-panel">
             <TaskFilter value={listFilters} onChange={setListFilters} />
             <TaskList tasks={listTasks} onTaskClick={handleTaskClick} />
+          </div>
+        )}
+
+        {/* Productivity */}
+        {rightPanel === "productivity" && (
+          <div className="home-productivity-panel">
+            <ProductivityPage />
           </div>
         )}
       </main>

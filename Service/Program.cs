@@ -86,6 +86,7 @@ builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IUserRoutineService, UserRoutineService>();
 builder.Services.AddScoped<AIPlannerService>();
 builder.Services.AddScoped<SmartSchedulerService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 

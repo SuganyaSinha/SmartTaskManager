@@ -10,6 +10,7 @@ interface ServerScheduledTask {
   End: string;
   Priority: string;
   Comments: string;
+  TaskCategory?: string;
   IsAllocatedOutsideRequestedTime: boolean;
   AllocationNote: string;
 }
@@ -34,7 +35,8 @@ export const postUserInput = async (input: string): Promise<ScheduledTaskWithNot
       serverTasks.map(async (serverTask) => {
         const created = await createTask({
           ...(serverTask as unknown as NewTask),
-          timezone: timeZone
+          timezone: timeZone,
+          category: serverTask.TaskCategory?.toLowerCase()
         });
 
         return {

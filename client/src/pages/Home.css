@@ -169,6 +169,13 @@
   min-height: 0;
 }
 
+/* ─── Productivity panel ──────────────────────────────────────────────── */
+.home-productivity-panel {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
 /* ─── Responsive ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .home-stat-grid {

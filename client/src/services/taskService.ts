@@ -68,7 +68,8 @@ export const updateTask = async (taskId: string, updates: Partial<NewTask>) => {
             end: updates.end,
             priority: updates.priority,
             comments: updates.comments,
-            status: updates.status
+            status: updates.status,
+            category: updates.category
         }, {
             headers: { 'Content-Type': 'application/json' },
         });

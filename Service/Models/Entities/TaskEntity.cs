@@ -36,6 +36,12 @@ namespace SmartTaskManager.Models.Entities
 
         [BsonElement("lastUpdated")]
         public DateTime? LastUpdated { get; set; } = null;
+
+        [BsonElement("completedAt")]
+        public DateTime? CompletedAt { get; set; } = null;
+
+        [BsonElement("category")]
+        public string? Category { get; set; } = null;
     }
 
         public enum TaskStatus

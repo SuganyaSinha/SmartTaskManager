@@ -142,6 +142,10 @@ namespace SmartTaskManager.Repositary
                 existingTask.Comments = task.Comments ?? existingTask.Comments;
                 existingTask.Status = (SmartTaskManager.Models.Entities.TaskStatus) task.Status;
                 existingTask.LastUpdated = DateTime.UtcNow;
+                if (task.CompletedAt.HasValue)
+                    existingTask.CompletedAt = task.CompletedAt;
+                if (task.Category != null)
+                    existingTask.Category = task.Category;
 
                 await _taskCollection.ReplaceOneAsync(t => t.Id == id, existingTask);
                 return _mapper.Map<TaskItem>(existingTask);

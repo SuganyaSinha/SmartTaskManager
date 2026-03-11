@@ -46,7 +46,12 @@ namespace SmartTaskManager.Services
 
         public async Task<TaskItem> UpdateTaskAsync(string id, string userId, TaskItem task)
         {
-            return await _taskRepositary.UpdateTaskAsync(id, userId, task);      
+            var existingTask = await _taskRepositary.GetTaskByIdAsync(id);
+            if (existingTask != null && task.Status == Models.DTO.TaskStatus.Completed && existingTask.Status != Models.DTO.TaskStatus.Completed)
+            {
+                task.CompletedAt = DateTime.UtcNow;
+            }
+            return await _taskRepositary.UpdateTaskAsync(id, userId, task);
         }
 
         public async Task<bool> DeleteTaskAsync(string id, string userId) 
@@ -62,7 +67,12 @@ namespace SmartTaskManager.Services
                 throw new KeyNotFoundException("Task not found or unauthorized");
             }
 
-            return await _taskRepositary.UpdateTaskAsync(id, userId, taskUpdate);            
+            if (taskUpdate.Status == Models.DTO.TaskStatus.Completed && existingTask.Status != Models.DTO.TaskStatus.Completed)
+            {
+                taskUpdate.CompletedAt = DateTime.UtcNow;
+            }
+
+            return await _taskRepositary.UpdateTaskAsync(id, userId, taskUpdate);
         }
 
         private DateTime ConvertToUtc(DateTime dateTime, TimeZoneInfo timeZone)

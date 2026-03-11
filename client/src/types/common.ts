@@ -16,6 +16,7 @@ export interface NewTask {
   comments: string;
   status: TaskStatus;
   timezone?: string;
+  category?: string;
 }
 
 export interface ScheduledTaskWithNotes extends NewTask {
