@@ -44,14 +44,6 @@ function isFuturePeriod(period: Period, date: Date): boolean {
   return startOf(period, addPeriod(period, date, 1)) > startOf(period, new Date());
 }
 
-function shortDay(dateStr: string): string {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' });
-}
-
-function dayNum(dateStr: string): string {
-  return String(new Date(dateStr + 'T00:00:00').getDate());
-}
-
 // ─── ring progress ───────────────────────────────────────────────────────────
 
 function RingProgress({ value, color, size = 52 }: { value: number; color: string; size?: number }) {
@@ -126,12 +118,6 @@ export default function ProductivityPage() {
   };
 
   const canGoForward = !isFuturePeriod(period, anchor);
-
-  const trendData = stats?.dailyTrend.map(d => ({
-    name: period === 'month' ? dayNum(d.date) : shortDay(d.date),
-    Completed: d.completed,
-    Total: d.total,
-  })) ?? [];
 
   const priorityData = stats ? [
     { name: 'High', Total: stats.priorityBreakdown.high.total, Completed: stats.priorityBreakdown.high.completed },
@@ -386,37 +372,6 @@ export default function ProductivityPage() {
                   </div>
                 </div>
 
-                {/* ── Row 2: Completion Trend (full width) ── */}
-                <div className="bg-slate-200 border border-slate-300 rounded-xl p-4 shadow-sm flex flex-col mt-4">
-                  <div className="flex items-center justify-between mb-3 flex-shrink-0">
-                    <div>
-                      <h2 className="text-sm font-semibold text-gray-700">Completion Trend</h2>
-                      <p className="text-xs text-gray-400">Completed per day</p>
-                    </div>
-                    <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                      {stats.completedTasks} done
-                    </span>
-                  </div>
-                  <div className="flex-1 min-h-[140px]">
-                    {period === 'day' ? (
-                      <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-                        {stats.completedTasks > 0
-                          ? `✓ ${stats.completedTasks} task${stats.completedTasks > 1 ? 's' : ''} completed today`
-                          : 'No tasks completed yet today'}
-                      </div>
-                    ) : (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={trendData} barSize={period === 'month' ? 6 : 16} margin={{ top: 2, right: 4, left: -28, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                          <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                          <YAxis allowDecimals={false} tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                          <Tooltip content={<ChartTooltip />} cursor={{ fill: '#f1f5f9' }} />
-                          <Bar dataKey="Completed" fill="#2563eb" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    )}
-                  </div>
-                </div>
               </>
             )}
           </>
