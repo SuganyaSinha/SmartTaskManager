@@ -168,7 +168,90 @@ namespace SmartTaskManager.Repositary
             await _taskCollection.DeleteOneAsync(task => task.Id == id);
             return true;
         }
-            
+
+        public async Task<int> BulkRescheduleAsync(string userId, DateTime sourceStart, DateTime sourceEnd, DateTime targetStart, string status)
+        {
+            var filterBuilder = Builders<SmartTaskManager.Models.Entities.TaskEntity>.Filter;
+            var mongoFilter = filterBuilder.Eq(t => t.UserId, userId)
+                & filterBuilder.Gte(t => t.Start, sourceStart)
+                & filterBuilder.Lte(t => t.Start, sourceEnd);
+
+            if (!string.IsNullOrEmpty(status) && status != "All" &&
+                Enum.TryParse<SmartTaskManager.Models.Entities.TaskStatus>(status, out var parsedStatus))
+                mongoFilter &= filterBuilder.Eq(t => t.Status, parsedStatus);
+
+            var tasks = await _taskCollection.Find(mongoFilter).ToListAsync();
+            var offset = targetStart.Date - sourceStart.Date;
+
+            foreach (var task in tasks)
+            {
+                task.Start = task.Start.HasValue ? task.Start.Value + offset : null;
+                task.End = task.End.HasValue ? task.End.Value + offset : null;
+                task.LastUpdated = DateTime.UtcNow;
+                await _taskCollection.ReplaceOneAsync(t => t.Id == task.Id, task);
+            }
+
+            return tasks.Count;
+        }
+
+        public async Task<int> BulkUpdateStatusAsync(string userId, DateTime? startDate, DateTime? endDate, string currentStatus, string newStatus)
+        {
+            if (!Enum.TryParse<SmartTaskManager.Models.Entities.TaskStatus>(newStatus, out var newTaskStatus))
+                throw new ArgumentException($"Invalid status: {newStatus}");
+
+            var filterBuilder = Builders<SmartTaskManager.Models.Entities.TaskEntity>.Filter;
+            var mongoFilter = filterBuilder.Eq(t => t.UserId, userId);
+
+            if (startDate.HasValue)
+                mongoFilter &= filterBuilder.Gte(t => t.Start, startDate.Value);
+            if (endDate.HasValue)
+                mongoFilter &= filterBuilder.Lte(t => t.Start, endDate.Value);
+
+            if (!string.IsNullOrEmpty(currentStatus) && currentStatus != "All" &&
+                Enum.TryParse<SmartTaskManager.Models.Entities.TaskStatus>(currentStatus, out var parsedCurrent))
+                mongoFilter &= filterBuilder.Eq(t => t.Status, parsedCurrent);
+
+            var update = Builders<SmartTaskManager.Models.Entities.TaskEntity>.Update
+                .Set(t => t.Status, newTaskStatus)
+                .Set(t => t.LastUpdated, DateTime.UtcNow);
+
+            var result = await _taskCollection.UpdateManyAsync(mongoFilter, update);
+            return (int)result.ModifiedCount;
+        }
+
+        public async Task<int> BulkDeleteAsync(string userId, DateTime? startDate, DateTime? endDate, string status)
+        {
+            var filterBuilder = Builders<SmartTaskManager.Models.Entities.TaskEntity>.Filter;
+            var mongoFilter = filterBuilder.Eq(t => t.UserId, userId);
+
+            if (startDate.HasValue)
+                mongoFilter &= filterBuilder.Gte(t => t.Start, startDate.Value);
+            if (endDate.HasValue)
+                mongoFilter &= filterBuilder.Lte(t => t.Start, endDate.Value);
+
+            if (!string.IsNullOrEmpty(status) && status != "All" &&
+                Enum.TryParse<SmartTaskManager.Models.Entities.TaskStatus>(status, out var parsedStatus))
+                mongoFilter &= filterBuilder.Eq(t => t.Status, parsedStatus);
+
+            var result = await _taskCollection.DeleteManyAsync(mongoFilter);
+            return (int)result.DeletedCount;
+        }
+
+        public async Task<Dictionary<string, int>> GetTaskCountsByStatusAsync(string userId, DateTime? startDate, DateTime? endDate)
+        {
+            var filterBuilder = Builders<SmartTaskManager.Models.Entities.TaskEntity>.Filter;
+            var mongoFilter = filterBuilder.Eq(t => t.UserId, userId);
+
+            if (startDate.HasValue)
+                mongoFilter &= filterBuilder.Gte(t => t.Start, startDate.Value);
+            if (endDate.HasValue)
+                mongoFilter &= filterBuilder.Lte(t => t.Start, endDate.Value);
+
+            var tasks = await _taskCollection.Find(mongoFilter).ToListAsync();
+            return tasks.GroupBy(t => t.Status.ToString())
+                        .ToDictionary(g => g.Key, g => g.Count());
+        }
+
     }
 
 }

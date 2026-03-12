@@ -14,6 +14,7 @@ import Callback from './pages/Callback';
 import TaskPage from './pages/TaskPage';
 import { UserRoutine } from './pages/UserRoutine';
 import ProductivityPage from './pages/ProductivityPage';
+import ChatScheduler from './pages/ChatScheduler';
 
 const ProtectedNewTask = withAuthenticationRequired(NewTask);
 const ProtectedTaskScheduler = withAuthenticationRequired(TaskScheduler);
@@ -21,6 +22,7 @@ const ProtectedTaskCalendarView = withAuthenticationRequired(TaskCalendarView);
 const ProtectedTaskPage = withAuthenticationRequired(TaskPage);
 const ProtectedUserRoutine = withAuthenticationRequired(UserRoutine);
 const ProtectedProductivityPage = withAuthenticationRequired(ProductivityPage);
+const ProtectedChatScheduler = withAuthenticationRequired(ChatScheduler);
 
 function AuthTokenSetup() {
   const { getToken } = useApiToken();
@@ -48,6 +50,7 @@ function App() {
             <Route path="/CalendarNew" element={<ProtectedTaskCalendarView />} />
             <Route path="/Task" element={<ProtectedTaskPage />} />
             <Route path="/Productivity" element={<ProtectedProductivityPage />} />
+            <Route path="/Chat" element={<ProtectedChatScheduler />} />
 
             {/* Auth0 callback */}
             <Route path="/callback" element={<Callback />} />

@@ -59,12 +59,27 @@ builder.Services.AddSingleton<Kernel>(sp =>
     var config = sp.GetRequiredService<IConfiguration>();
 
     var apiKey = builder.Configuration["OpenAI:ApiKey"];
-    var model = builder.Configuration["OpenAI:Model"];  
+    var model = builder.Configuration["OpenAI:Model"];
 
     var kernelBuilder = Kernel.CreateBuilder();
 
     kernelBuilder.AddOpenAIChatCompletion(
         modelId: model,
+        apiKey: apiKey
+    );
+
+    return kernelBuilder.Build();
+});
+
+// Chat kernel uses gpt-4o-mini (16x cheaper) for conversational task management
+builder.Services.AddKeyedSingleton<Kernel>("chat", (sp, _) =>
+{
+    var apiKey = builder.Configuration["OpenAI:ApiKey"];
+    var chatModel = builder.Configuration["OpenAI:ChatModel"] ?? "gpt-4o-mini";
+
+    var kernelBuilder = Kernel.CreateBuilder();
+    kernelBuilder.AddOpenAIChatCompletion(
+        modelId: chatModel,
         apiKey: apiKey
     );
 
@@ -86,6 +101,7 @@ builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IUserRoutineService, UserRoutineService>();
 builder.Services.AddScoped<AIPlannerService>();
 builder.Services.AddScoped<SmartSchedulerService>();
+builder.Services.AddScoped<ConversationalChatService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));

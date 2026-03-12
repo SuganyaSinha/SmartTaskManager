@@ -77,3 +77,68 @@ export interface RoutineProfile {
   constraints?: Constraints | null;
   freeTextDescription: string;
 }
+
+// ── Chat types ──────────────────────────────────────────────────────────────
+
+export interface ChatRequest {
+  sessionId: string;
+  userMessage: string;
+  currentDate: string;
+  timeZone: string;
+  confirmed: boolean;
+}
+
+export interface PreviewTask {
+  id: string;
+  title: string;
+  oldStart?: string;
+  oldEnd?: string;
+  newStart?: string;
+  newEnd?: string;
+  status?: string;
+}
+
+export interface PreviewData {
+  affectedCount: number;
+  tasks: PreviewTask[];
+}
+
+export interface QueryTaskResult {
+  id: string;
+  title: string;
+  start?: string;
+  end?: string;
+  status: string;
+  priority?: string;
+}
+
+export interface ChatResponse {
+  sessionId: string;
+  /** answer | confirmation_required | operation_complete | tasks_created | clarifying_question | error */
+  messageType: string;
+  message: string;
+  previewData?: PreviewData;
+  scheduledTasks?: any[];
+  queryResults?: QueryTaskResult[];
+}
+
+export interface ScheduledTaskResult {
+  title: string;
+  start: string;
+  end: string;
+  priority: string;
+  comments: string;
+  taskCategory?: string;
+  isAllocatedOutsideRequestedTime: boolean;
+  allocationNote: string;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  previewData?: PreviewData;
+  queryResults?: QueryTaskResult[];
+  scheduledTasks?: ScheduledTaskResult[];
+  createdTaskIds?: string[];
+  messageType?: string;
+}
