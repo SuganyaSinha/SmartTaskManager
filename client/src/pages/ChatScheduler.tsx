@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import moment from 'moment';
 import { TaskStatus, ChatMessage, PreviewData, QueryTaskResult, NewTask, ScheduledTaskResult, ChatSessionSummary } from '../types/common';
 import { sendChatMessage, getChatSessions, getSessionMessages } from '../services/chatService';
 import { createTask, getTaskById, updateTask, deleteTask } from '../services/taskService';
+import AudioInput, { type AudioInputHandle } from './AudioInput';
 import TaskEditModal from '../components/TaskEditModal';
 import './ChatScheduler.css';
 
@@ -97,7 +98,7 @@ const ChatScheduler = () => {
   // ── Session state ──────────────────────────────────────────────────────────
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
+  const [sessionId, setSessionId] = useState<string>(() => crypto.randomUUID());
 
   // ── Chat state ─────────────────────────────────────────────────────────────
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -106,6 +107,7 @@ const ChatScheduler = () => {
   const [error, setError] = useState<string | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState<PreviewData | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioInputRef = useRef<AudioInputHandle>(null);
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -175,6 +177,7 @@ const ChatScheduler = () => {
     if (!text && !confirmed) return;
 
     const messageText = confirmed ? '✓ Yes, proceed' : text;
+    audioInputRef.current?.reset();
 
     setMessages(prev => [...prev, { role: 'user', content: messageText }]);
     setInputValue('');
@@ -251,6 +254,10 @@ const ChatScheduler = () => {
       setError('Failed to load task.');
     }
   };
+
+  const handleTranscriptChange = useCallback((transcript: string) => {
+    setInputValue(transcript);
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -498,6 +505,7 @@ const ChatScheduler = () => {
             rows={2}
             disabled={isLoading}
           />
+          <AudioInput ref={audioInputRef} onTranscriptChange={handleTranscriptChange} />
           <button
             className="cs-send-btn"
             onClick={() => handleSend()}

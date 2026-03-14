@@ -7,6 +7,7 @@ interface AudioInputProps {
 
 export interface AudioInputHandle {
   stop: () => void;
+  reset: () => void;
 }
 
 const AudioInput = forwardRef<AudioInputHandle, AudioInputProps>(
@@ -26,7 +27,12 @@ const AudioInput = forwardRef<AudioInputHandle, AudioInputProps>(
     };
 
     // Expose stop() to parent components (e.g. on form submit)
-    useImperativeHandle(ref, () => ({ stop: stopListening }));
+    const resetAndStop = () => {
+      stopListening();
+      resetTranscript();
+    };
+
+    useImperativeHandle(ref, () => ({ stop: stopListening, reset: resetAndStop }));
 
     // iOS Safari stops the recognizer after each utterance; restart if user
     // hasn't explicitly stopped.
