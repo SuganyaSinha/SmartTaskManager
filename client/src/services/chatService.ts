@@ -1,5 +1,5 @@
 import api from './api';
-import { ChatRequest, ChatResponse } from '../types/common';
+import { ChatRequest, ChatResponse, ChatSessionSummary, SessionMessageDto } from '../types/common';
 import moment from 'moment';
 
 export const sendChatMessage = async (
@@ -22,5 +22,15 @@ export const sendChatMessage = async (
     headers: { 'Content-Type': 'application/json' },
   });
 
+  return response.data;
+};
+
+export const getChatSessions = async (): Promise<ChatSessionSummary[]> => {
+  const response = await api.get<ChatSessionSummary[]>('/api/chat/sessions');
+  return response.data;
+};
+
+export const getSessionMessages = async (sessionId: string): Promise<SessionMessageDto[]> => {
+  const response = await api.get<SessionMessageDto[]>(`/api/chat/sessions/${sessionId}/messages`);
   return response.data;
 };

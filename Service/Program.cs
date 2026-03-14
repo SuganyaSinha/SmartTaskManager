@@ -91,6 +91,7 @@ builder.Services.AddScoped<ITaskRepository, TaskRepositary>();
 builder.Services.AddScoped<IPromptRepositary, PromptRepositary>();
 builder.Services.AddScoped<IUserProfileRepositary, UserProfileRepositary>();
 builder.Services.AddScoped<IUserRoutineRepositary, UserRoutineRepositary>();
+builder.Services.AddScoped<IChatSessionRepository, ChatSessionRepository>();
 
 
 // Register Services

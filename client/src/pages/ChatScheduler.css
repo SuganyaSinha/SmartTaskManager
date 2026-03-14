@@ -1,3 +1,25 @@
+/* ── Markdown rendering ──────────────────────────────────────────────────── */
+.cs-md-para {
+  margin: 0 0 4px 0;
+}
+.cs-md-para:last-child {
+  margin-bottom: 0;
+}
+.cs-md-list {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+.cs-md-list li {
+  margin-bottom: 2px;
+}
+.cs-inline-code {
+  background: #f1f5f9;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .cs-layout {
   display: flex;
@@ -6,7 +28,7 @@
 }
 
 .cs-chat-panel {
-  width: 35%;
+  flex: 1;
   min-width: 280px;
   display: flex;
   flex-direction: column;
@@ -14,9 +36,92 @@
   background: #f8fafc;
 }
 
-.cs-chat-panel--full {
+/* ── Session sidebar ─────────────────────────────────────────────────────── */
+.cs-session-sidebar {
+  width: 220px;
+  min-width: 180px;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e2e8f0;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+.cs-session-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.cs-new-chat-btn {
   width: 100%;
-  border-right: none;
+  padding: 7px 0;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cs-new-chat-btn:hover { background: #2563eb; }
+
+.cs-session-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.cs-session-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.12s;
+}
+
+.cs-session-item:hover { background: #e2e8f0; }
+
+.cs-session-item--active {
+  background: #dbeafe;
+  border-left: 3px solid #3b82f6;
+}
+
+.cs-session-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-session-meta {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.cs-session-empty {
+  padding: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.cs-session-loading {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .cs-session-sidebar { display: none; }
+  .cs-chat-panel { border-right: none; }
 }
 
 /* ── Chat header ─────────────────────────────────────────────────────────── */

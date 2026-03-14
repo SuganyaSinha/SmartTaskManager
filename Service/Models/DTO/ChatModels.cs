@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.SemanticKernel.ChatCompletion;
+using SmartTaskManager.Models.Entities;
 
 namespace SmartTaskManager.Models.DTO
 {
@@ -60,9 +61,35 @@ namespace SmartTaskManager.Models.DTO
     {
         public string SessionId { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
         public ChatHistory History { get; set; } = new();
+        /// <summary>Append-only list persisted to MongoDB. Retains ResponseJson for all past messages.</summary>
+        public List<StoredMessage> StoredMessages { get; set; } = new();
         public DateTime LastActivity { get; set; } = DateTime.UtcNow;
         public PendingOperation? PendingOperation { get; set; }
+        public List<QueryTaskResult>? QueryResults { get; set; }
+    }
+
+    public class ChatSessionSummary
+    {
+        public string SessionId { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public DateTime LastActivity { get; set; }
+        public int MessageCount { get; set; }
+    }
+
+    /// <summary>
+    /// Returned by GET /api/chat/sessions/{id}/messages.
+    /// Mirrors ChatResponse but adds Role so the frontend can reconstruct ChatMessage[] identically.
+    /// MessageType = "user_message" for user turns.
+    /// </summary>
+    public class SessionMessageDto
+    {
+        public string Role { get; set; } = string.Empty;      // "user" | "assistant"
+        public string Message { get; set; } = string.Empty;
+        public string MessageType { get; set; } = string.Empty;
+        public PreviewData? PreviewData { get; set; }
+        public List<ScheduledTaskResult>? ScheduledTasks { get; set; }
         public List<QueryTaskResult>? QueryResults { get; set; }
     }
 

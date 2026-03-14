@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using SmartTaskManager.Models.DTO;
+using SmartTaskManager.Models.Entities;
 using SmartTaskManager.Repositary;
 using SmartTaskManager.Services;
 
@@ -10,6 +12,10 @@ using SmartTaskManager.Services;
 /// Manages bidirectional chat sessions for task management.
 /// Uses gpt-4o-mini for all chat operations (16x cheaper than gpt-4o).
 /// Routes task creation requests to SmartSchedulerService (keeps gpt-4o for complex scheduling).
+///
+/// Session storage: hybrid — hot in-memory cache (ConcurrentDictionary) + MongoDB persistence.
+/// Load path: memory hit → DB load → new session.
+/// Persist path: upsert to DB after every assistant response.
 ///
 /// Confirmation pattern:
 ///   1. User asks a bulk operation → TaskPlugin preview function called → session.PendingOperation set
@@ -26,17 +32,20 @@ public class ConversationalChatService
     private readonly Kernel _chatKernel;
     private readonly SmartSchedulerService _smartSchedulerService;
     private readonly ITaskRepository _taskRepository;
+    private readonly IChatSessionRepository _chatSessionRepository;
     private readonly ILogger<ConversationalChatService> _logger;
 
     public ConversationalChatService(
         [FromKeyedServices("chat")] Kernel chatKernel,
         SmartSchedulerService smartSchedulerService,
         ITaskRepository taskRepository,
+        IChatSessionRepository chatSessionRepository,
         ILogger<ConversationalChatService> logger)
     {
         _chatKernel = chatKernel;
         _smartSchedulerService = smartSchedulerService;
         _taskRepository = taskRepository;
+        _chatSessionRepository = chatSessionRepository;
         _logger = logger;
     }
 
@@ -44,12 +53,15 @@ public class ConversationalChatService
     {
         CleanupExpiredSessions();
 
-        var session = GetOrCreateSession(request.SessionId, userId);
+        var session = await GetOrCreateSessionAsync(request.SessionId, userId);
 
         // Confirmed=true: execute the pending operation without calling LLM again
         if (request.Confirmed && session.PendingOperation != null)
         {
-            return await ExecutePendingOperationAsync(session, request.SessionId);
+            session.StoredMessages.Add(new StoredMessage { Role = "user", Content = "✓ Yes, proceed", Timestamp = DateTime.UtcNow });
+            var confirmResult = await ExecutePendingOperationAsync(session, request.SessionId);
+            await PersistSessionAsync(session, confirmResult);
+            return confirmResult;
         }
 
         // Ensure system prompt is set once per session
@@ -62,6 +74,14 @@ public class ConversationalChatService
         session.PendingOperation = null;
 
         session.History.AddUserMessage(request.UserMessage);
+        session.StoredMessages.Add(new StoredMessage { Role = "user", Content = request.UserMessage, Timestamp = DateTime.UtcNow });
+
+        // Capture title from the first user message
+        if (string.IsNullOrEmpty(session.Title))
+        {
+            var len = request.UserMessage.Length;
+            session.Title = len <= 60 ? request.UserMessage : request.UserMessage[..60];
+        }
 
         // Create a kernel clone with TaskPlugin registered for this user's session
         var kernelClone = _chatKernel.Clone();
@@ -107,7 +127,7 @@ public class ConversationalChatService
 
                 var scheduledTasks = await _smartSchedulerService.ScheduleTasksAsync(openAiRequest, userId);
                 var taskWord = scheduledTasks.Count == 1 ? "task" : "tasks";
-                var message = $"I've scheduled {scheduledTasks.Count} {taskWord} for you. Check the calendar!";
+                var message = $"I've scheduled {scheduledTasks.Count} {taskWord} for you.";
 
                 if (scheduledTasks.Any(t => t.IsAllocatedOutsideRequestedTime))
                 {
@@ -118,13 +138,15 @@ public class ConversationalChatService
                         message += "\n\nNote: " + string.Join("\n", notes);
                 }
 
-                return new ChatResponse
+                var tasksCreatedResponse = new ChatResponse
                 {
                     SessionId = request.SessionId,
                     MessageType = "tasks_created",
                     Message = message,
                     ScheduledTasks = scheduledTasks
                 };
+                await PersistSessionAsync(session, tasksCreatedResponse);
+                return tasksCreatedResponse;
             }
             catch (Exception ex)
             {
@@ -136,26 +158,30 @@ public class ConversationalChatService
         // A preview function was called → require confirmation
         if (session.PendingOperation != null)
         {
-            return new ChatResponse
+            var confirmationResponse = new ChatResponse
             {
                 SessionId = request.SessionId,
                 MessageType = "confirmation_required",
                 Message = content,
                 PreviewData = session.PendingOperation.PreviewData
             };
+            await PersistSessionAsync(session, confirmationResponse);
+            return confirmationResponse;
         }
 
         // Collect query results if query_tasks was called, then clear from session
         var queryResults = session.QueryResults;
         session.QueryResults = null;
 
-        return new ChatResponse
+        var answerResponse = new ChatResponse
         {
             SessionId = request.SessionId,
             MessageType = "answer",
             Message = content,
             QueryResults = queryResults
         };
+        await PersistSessionAsync(session, answerResponse);
+        return answerResponse;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -207,6 +233,7 @@ public class ConversationalChatService
                         if (deleted) count++;
                     }
                 }
+                else count = 0;
             }
             else
             {
@@ -261,15 +288,116 @@ public class ConversationalChatService
         }
     }
 
-    private ChatSession GetOrCreateSession(string sessionId, string userId)
+    /// <summary>
+    /// Cache-aside: memory → DB → new. Ownership is verified at every layer.
+    /// </summary>
+    private async Task<ChatSession> GetOrCreateSessionAsync(string sessionId, string userId)
     {
-        return _sessions.GetOrAdd(sessionId, id => new ChatSession
+        // 1. Hot cache hit
+        if (_sessions.TryGetValue(sessionId, out var cached))
         {
-            SessionId = id,
+            if (cached.UserId != userId)
+                throw new UnauthorizedAccessException($"Session '{sessionId}' does not belong to the current user.");
+            return cached;
+        }
+
+        // 2. DB load (cache miss — server restart or new browser tab)
+        var entity = await _chatSessionRepository.GetByIdAsync(sessionId);
+        if (entity != null)
+        {
+            if (entity.UserId != userId)
+                throw new UnauthorizedAccessException($"Session '{sessionId}' does not belong to the current user.");
+
+            var session = RehydrateSession(entity);
+            _sessions[sessionId] = session;
+            return session;
+        }
+
+        // 3. Brand-new session
+        var newSession = new ChatSession
+        {
+            SessionId = sessionId,
             UserId = userId,
             History = new ChatHistory(),
             LastActivity = DateTime.UtcNow
-        });
+        };
+        _sessions[sessionId] = newSession;
+        return newSession;
+    }
+
+    /// <summary>
+    /// Reconstructs an in-memory ChatSession from a persisted entity.
+    /// System messages are intentionally excluded — they are re-added by ProcessMessageAsync
+    /// on the first exchange after resume (BuildSystemPrompt uses the current date/timezone).
+    /// </summary>
+    private static ChatSession RehydrateSession(ChatSessionEntity entity)
+    {
+        var history = new ChatHistory();
+        var nonSystem = entity.Messages
+            .Where(m => m.Role != "system")
+            .TakeLast(MaxHistoryMessages)
+            .ToList();
+
+        foreach (var msg in nonSystem)
+        {
+            if (msg.Role == "user")
+                history.AddUserMessage(msg.Content);
+            else
+                history.AddAssistantMessage(msg.Content);
+        }
+
+        return new ChatSession
+        {
+            SessionId = entity.SessionId,
+            UserId = entity.UserId,
+            Title = entity.Title,
+            History = history,
+            StoredMessages = entity.Messages.ToList(),
+            LastActivity = entity.LastActivity
+        };
+    }
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
+
+    /// <summary>
+    /// Upserts the session to MongoDB. Non-fatal — a persistence failure must not break
+    /// the chat response returned to the user.
+    /// Appends the assistant response (with full ResponseJson) to session.StoredMessages
+    /// so all prior messages retain their ResponseJson across upserts.
+    /// </summary>
+    private async Task PersistSessionAsync(ChatSession session, ChatResponse assistantResponse)
+    {
+        try
+        {
+            // Append the current assistant response — preserves ResponseJson on all prior messages
+            session.StoredMessages.Add(new StoredMessage
+            {
+                Role = "assistant",
+                Content = assistantResponse.Message,
+                Timestamp = DateTime.UtcNow,
+                ResponseJson = JsonSerializer.Serialize(assistantResponse, _jsonOptions)
+            });
+
+            var entity = new ChatSessionEntity
+            {
+                SessionId = session.SessionId,
+                UserId = session.UserId,
+                Title = session.Title,
+                Messages = session.StoredMessages,
+                LastActivity = session.LastActivity,
+                CreatedAt = DateTime.UtcNow  // SetOnInsert in repo preserves the original value
+            };
+
+            await _chatSessionRepository.UpsertAsync(entity);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist chat session {SessionId}", session.SessionId);
+        }
     }
 
     private static void TrimHistory(ChatHistory history)

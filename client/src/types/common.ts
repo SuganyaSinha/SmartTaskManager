@@ -142,3 +142,19 @@ export interface ChatMessage {
   createdTaskIds?: string[];
   messageType?: string;
 }
+
+export interface ChatSessionSummary {
+  sessionId: string;
+  title: string;
+  lastActivity: string;
+  messageCount: number;
+}
+
+export interface SessionMessageDto {
+  role: 'user' | 'assistant';
+  message: string;
+  messageType: string;
+  previewData?: PreviewData;
+  scheduledTasks?: ScheduledTaskResult[];
+  queryResults?: QueryTaskResult[];
+}

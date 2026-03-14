@@ -21,6 +21,8 @@ namespace SmartTaskManager.Data
         public IMongoCollection<RoutineProfileEntity> UserRoutines => _database.GetCollection<RoutineProfileEntity>("UserRoutines");
 
         public IMongoCollection<Prompt> Prompt => _database.GetCollection<Prompt>("Prompts");
+
+        public IMongoCollection<ChatSessionEntity> ChatSessions => _database.GetCollection<ChatSessionEntity>("ChatSessions");
     }
 
 }

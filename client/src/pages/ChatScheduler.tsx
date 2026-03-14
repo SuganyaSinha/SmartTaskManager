@@ -1,10 +1,61 @@
 import React, { useState, useEffect, useRef } from 'react';
 import moment from 'moment';
-import { TaskStatus, ChatMessage, PreviewData, QueryTaskResult, NewTask, ScheduledTaskResult } from '../types/common';
-import { sendChatMessage } from '../services/chatService';
+import { TaskStatus, ChatMessage, PreviewData, QueryTaskResult, NewTask, ScheduledTaskResult, ChatSessionSummary } from '../types/common';
+import { sendChatMessage, getChatSessions, getSessionMessages } from '../services/chatService';
 import { createTask, getTaskById, updateTask, deleteTask } from '../services/taskService';
 import TaskEditModal from '../components/TaskEditModal';
 import './ChatScheduler.css';
+
+// Render common LLM markdown patterns without an external library.
+// Handles: **bold**, `code`, bullet lists (- or *), numbered lists, blank-line paragraphs.
+function renderMarkdown(text: string): React.ReactNode {
+  const paragraphs = text.split(/\n{2,}/);
+  return paragraphs.map((para, pi) => {
+    const lines = para.split('\n');
+    const isBullet = lines.every(l => /^[-*]\s/.test(l.trimStart()) || l.trim() === '');
+    const isNumbered = lines.every(l => /^\d+\.\s/.test(l.trimStart()) || l.trim() === '');
+
+    const renderInline = (str: string): React.ReactNode => {
+      // Split on **bold** and `code`
+      const parts = str.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+      return parts.map((part, i) => {
+        if (/^\*\*(.+)\*\*$/.test(part)) return <strong key={i}>{part.slice(2, -2)}</strong>;
+        if (/^`(.+)`$/.test(part)) return <code key={i} className="cs-inline-code">{part.slice(1, -1)}</code>;
+        return part;
+      });
+    };
+
+    if (isBullet) {
+      return (
+        <ul key={pi} className="cs-md-list">
+          {lines.filter(l => l.trim()).map((l, li) => (
+            <li key={li}>{renderInline(l.replace(/^[-*]\s/, '').trimStart())}</li>
+          ))}
+        </ul>
+      );
+    }
+    if (isNumbered) {
+      return (
+        <ol key={pi} className="cs-md-list">
+          {lines.filter(l => l.trim()).map((l, li) => (
+            <li key={li}>{renderInline(l.replace(/^\d+\.\s/, '').trimStart())}</li>
+          ))}
+        </ol>
+      );
+    }
+    // Plain paragraph — join lines with spaces, preserve single newlines as <br>
+    return (
+      <p key={pi} className="cs-md-para">
+        {lines.map((l, li) => (
+          <React.Fragment key={li}>
+            {renderInline(l)}
+            {li < lines.length - 1 && <br />}
+          </React.Fragment>
+        ))}
+      </p>
+    );
+  });
+}
 
 // Extract the last paragraph from an LLM confirmation message (e.g. "Click Yes, proceed…").
 function extractConfirmationPrompt(content: string): string {
@@ -43,19 +94,80 @@ const ChatScheduler = () => {
   const [fetchedTask, setFetchedTask] = useState<NewTask | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // ── Session state ──────────────────────────────────────────────────────────
+  const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
+
   // ── Chat state ─────────────────────────────────────────────────────────────
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState<PreviewData | null>(null);
-  const [sessionId] = useState(() => crypto.randomUUID());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll chat to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Load session list on mount
+  useEffect(() => {
+    const loadSessions = async () => {
+      setSessionsLoading(true);
+      try {
+        const list = await getChatSessions();
+        setSessions(list);
+      } catch {
+        // Non-fatal
+      } finally {
+        setSessionsLoading(false);
+      }
+    };
+    loadSessions();
+  }, []);
+
+  // ── Session handlers ───────────────────────────────────────────────────────
+  const handleNewChat = () => {
+    setSessionId(crypto.randomUUID());
+    setMessages([]);
+    setPendingConfirmation(null);
+    setError(null);
+    setInputValue('');
+  };
+
+  const handleSelectSession = async (selectedSessionId: string) => {
+    if (selectedSessionId === sessionId) return;
+    setSessionId(selectedSessionId);
+    setMessages([]);
+    setPendingConfirmation(null);
+    setError(null);
+    setInputValue('');
+    try {
+      const stored = await getSessionMessages(selectedSessionId);
+      const chatMessages: ChatMessage[] = stored.map(m => ({
+        role: m.role,
+        content: m.message,
+        messageType: m.messageType === 'user_message' ? undefined : m.messageType,
+        previewData: m.previewData,
+        queryResults: m.queryResults,
+        scheduledTasks: m.scheduledTasks,
+      }));
+      setMessages(chatMessages);
+    } catch {
+      // Fail silently — session continues server-side
+    }
+  };
+
+  const refreshSessions = async () => {
+    try {
+      const list = await getChatSessions();
+      setSessions(list);
+    } catch {
+      // Non-fatal
+    }
+  };
 
   // ── Chat send ──────────────────────────────────────────────────────────────
   const handleSend = async (confirmed = false) => {
@@ -106,6 +218,8 @@ const ChatScheduler = () => {
         scheduledTasks: response.scheduledTasks as ScheduledTaskResult[] | undefined,
         createdTaskIds,
       }]);
+
+      await refreshSessions();
     } catch {
       setError('Something went wrong. Please try again.');
       setMessages(prev => [...prev, {
@@ -172,7 +286,33 @@ const ChatScheduler = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="cs-layout">
-      <div className="cs-chat-panel cs-chat-panel--full">
+      {/* Session sidebar */}
+      <div className="cs-session-sidebar">
+        <div className="cs-session-header">
+          <button className="cs-new-chat-btn" onClick={handleNewChat}>+ New Chat</button>
+        </div>
+        {sessionsLoading && <div className="cs-session-loading">Loading...</div>}
+        <ul className="cs-session-list">
+          {sessions.map(s => (
+            <li
+              key={s.sessionId}
+              className={`cs-session-item${s.sessionId === sessionId ? ' cs-session-item--active' : ''}`}
+              onClick={() => handleSelectSession(s.sessionId)}
+            >
+              <div className="cs-session-title">{s.title || 'New Chat'}</div>
+              <div className="cs-session-meta">
+                {s.messageCount} msg · {moment(s.lastActivity).fromNow()}
+              </div>
+            </li>
+          ))}
+          {sessions.length === 0 && !sessionsLoading && (
+            <li className="cs-session-empty">No previous chats</li>
+          )}
+        </ul>
+      </div>
+
+      {/* Chat panel */}
+      <div className="cs-chat-panel">
         <div className="cs-chat-header">
           <span className="cs-chat-title">Task Assistant</span>
           <span className="cs-chat-hint">Ask me to move, update, query, or create your tasks</span>
@@ -200,8 +340,8 @@ const ChatScheduler = () => {
             <div key={i} className={`cs-message cs-message--${msg.role}`}>
               <div className="cs-bubble">
                 {!isConfirmation && (parts
-                  ? parts.intro && <span className="cs-friendly-text">{parts.intro}</span>
-                  : msg.content)}
+                  ? parts.intro && <div className="cs-friendly-text">{renderMarkdown(parts.intro)}</div>
+                  : msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content)}
 
                 {msg.previewData && isConfirmation && (
                   <div className="cs-preview">
@@ -317,7 +457,7 @@ const ChatScheduler = () => {
                   </div>
                 )}
 
-                {parts?.outro && <span className="cs-friendly-text">{parts.outro}</span>}
+                {parts?.outro && <div className="cs-friendly-text">{renderMarkdown(parts.outro)}</div>}
               </div>
             </div>
           );
