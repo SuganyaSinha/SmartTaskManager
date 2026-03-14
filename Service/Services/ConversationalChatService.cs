@@ -51,6 +51,12 @@ public class ConversationalChatService
 
     public async Task<ChatResponse> ProcessMessageAsync(ChatRequest request, string userId)
     {
+        if (!DateTime.TryParse(request.CurrentDate, out _))
+            return ErrorResponse(request.SessionId, "Invalid date format.");
+
+        try { TimeZoneInfo.FindSystemTimeZoneById(request.TimeZone); }
+        catch { return ErrorResponse(request.SessionId, "Invalid timezone."); }
+
         CleanupExpiredSessions();
 
         var session = await GetOrCreateSessionAsync(request.SessionId, userId);
