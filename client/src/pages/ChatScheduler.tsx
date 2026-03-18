@@ -195,8 +195,8 @@ const ChatScheduler = () => {
           (response.scheduledTasks as ScheduledTaskResult[]).map(t =>
             createTask({
               title: t.title,
-              start: new Date(t.start),
-              end: new Date(t.end),
+              start: t.start as unknown as Date,
+              end: t.end as unknown as Date,
               priority: t.priority,
               comments: t.comments,
               status: TaskStatus.NotStarted,

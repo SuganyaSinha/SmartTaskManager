@@ -46,18 +46,18 @@ public class SmartSchedulerService
         };
 
     // ─── Dependencies ────────────────────────────────────────────────────────
-    private readonly Kernel _kernel;
+    private readonly Kernel _grokKernel;
     private readonly ITaskRepository _taskRepository;
     private readonly IUserRoutineRepositary _userRoutineRepository;
     private readonly ILogger<SmartSchedulerService> _logger;
 
     public SmartSchedulerService(
-        Kernel kernel,
+        [FromKeyedServices("grok-scheduler")] Kernel grokKernel,
         ITaskRepository taskRepository,
         IUserRoutineRepositary userRoutineRepository,
         ILogger<SmartSchedulerService> logger)
     {
-        _kernel                = kernel               ?? throw new ArgumentNullException(nameof(kernel));
+        _grokKernel            = grokKernel           ?? throw new ArgumentNullException(nameof(grokKernel));
         _taskRepository        = taskRepository       ?? throw new ArgumentNullException(nameof(taskRepository));
         _userRoutineRepository = userRoutineRepository ?? throw new ArgumentNullException(nameof(userRoutineRepository));
         _logger                = logger               ?? throw new ArgumentNullException(nameof(logger));
@@ -139,7 +139,7 @@ public class SmartSchedulerService
     private async Task<List<ParsedTaskRequest>> ExtractIntentAsync(
         string userInput, string currentDate)
     {
-        var chatService = _kernel.GetRequiredService<IChatCompletionService>();
+        var chatService = _grokKernel.GetRequiredService<IChatCompletionService>();
         var history     = new ChatHistory();
         history.AddSystemMessage(BuildIntentPrompt(currentDate));
         history.AddUserMessage(userInput);
@@ -147,7 +147,7 @@ public class SmartSchedulerService
         var response = await chatService.GetChatMessageContentAsync(
             history,
             new OpenAIPromptExecutionSettings { MaxTokens = 700 },
-            _kernel);
+            _grokKernel);
 
         string raw = StripMarkdownFences(response.Content ?? string.Empty).Trim();
 

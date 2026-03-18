@@ -86,6 +86,42 @@ builder.Services.AddKeyedSingleton<Kernel>("chat", (sp, _) =>
     return kernelBuilder.Build();
 });
 
+// Grok chat kernel — non-reasoning model for ConversationalChatService
+builder.Services.AddKeyedSingleton<Kernel>("grok-chat", (sp, _) =>
+{
+    var apiKey = builder.Configuration["Grok:ApiKey"]!;
+    var model = builder.Configuration["Grok:ChatModel"] ?? "grok-4-1-fast-non-reasoning";
+    var baseUrl = builder.Configuration["Grok:BaseUrl"] ?? "https://api.x.ai/v1";
+
+    var openAIClient = new OpenAI.OpenAIClient(
+        new System.ClientModel.ApiKeyCredential(apiKey),
+        new OpenAI.OpenAIClientOptions { Endpoint = new Uri(baseUrl) }
+    );
+
+    var kernelBuilder = Kernel.CreateBuilder();
+    kernelBuilder.AddOpenAIChatCompletion(model, openAIClient);
+
+    return kernelBuilder.Build();
+});
+
+// Grok scheduler kernel — reasoning model for SmartSchedulerService intent extraction
+builder.Services.AddKeyedSingleton<Kernel>("grok-scheduler", (sp, _) =>
+{
+    var apiKey = builder.Configuration["Grok:ApiKey"]!;
+    var model = builder.Configuration["Grok:SchedulerModel"] ?? "grok-4-1-fast-reasoning";
+    var baseUrl = builder.Configuration["Grok:BaseUrl"] ?? "https://api.x.ai/v1";
+
+    var openAIClient = new OpenAI.OpenAIClient(
+        new System.ClientModel.ApiKeyCredential(apiKey),
+        new OpenAI.OpenAIClientOptions { Endpoint = new Uri(baseUrl) }
+    );
+
+    var kernelBuilder = Kernel.CreateBuilder();
+    kernelBuilder.AddOpenAIChatCompletion(model, openAIClient);
+
+    return kernelBuilder.Build();
+});
+
 // Register Repositaries
 builder.Services.AddScoped<ITaskRepository, TaskRepositary>();
 builder.Services.AddScoped<IPromptRepositary, PromptRepositary>();

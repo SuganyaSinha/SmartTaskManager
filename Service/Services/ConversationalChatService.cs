@@ -36,7 +36,7 @@ public class ConversationalChatService
     private readonly ILogger<ConversationalChatService> _logger;
 
     public ConversationalChatService(
-        [FromKeyedServices("chat")] Kernel chatKernel,
+        [FromKeyedServices("grok-chat")] Kernel chatKernel,
         SmartSchedulerService smartSchedulerService,
         ITaskRepository taskRepository,
         IChatSessionRepository chatSessionRepository,
