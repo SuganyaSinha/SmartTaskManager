@@ -440,9 +440,41 @@ public class ConversationalChatService
 
     private static string BuildSystemPrompt(string currentDate, string timeZone)
     {
+        // Pre-compute concrete date anchors so gpt-4o-mini doesn't have to reason about them
+        DateTime.TryParse(currentDate, out var today);
+        today = today.Date;
+
+        var yesterday  = today.AddDays(-1);
+        var tomorrow   = today.AddDays(1);
+
+        // Monday-based week
+        int daysFromMonday = ((int)today.DayOfWeek + 6) % 7;
+        var thisWeekStart  = today.AddDays(-daysFromMonday);
+        var thisWeekEnd    = thisWeekStart.AddDays(6);
+        var nextWeekStart  = thisWeekStart.AddDays(7);
+        var nextWeekEnd    = nextWeekStart.AddDays(6);
+        var lastWeekStart  = thisWeekStart.AddDays(-7);
+        var lastWeekEnd    = thisWeekStart.AddDays(-1);
+
+        var thisMonthStart = new DateTime(today.Year, today.Month, 1);
+        var thisMonthEnd   = thisMonthStart.AddMonths(1).AddDays(-1);
+        var lastMonthStart = thisMonthStart.AddMonths(-1);
+        var lastMonthEnd   = thisMonthStart.AddDays(-1);
+        var nextMonthStart = thisMonthStart.AddMonths(1);
+        var nextMonthEnd   = nextMonthStart.AddMonths(1).AddDays(-1);
+
+        // Next occurrence of each weekday (always forward from today)
+        static string NextWeekday(DateTime from, DayOfWeek dow)
+        {
+            var d = from.AddDays(1);
+            while (d.DayOfWeek != dow) d = d.AddDays(1);
+            return d.ToString("yyyy-MM-dd");
+        }
+
+        var F = "yyyy-MM-dd";
         return $"""
             You are a task management assistant for the Smart Task Manager app.
-            Current local date/time: {currentDate}. User's timezone: {timeZone}.
+            Today's local date: {today.ToString(F)}. User's timezone: {timeZone}.
 
             You have access to these functions:
             - query_tasks: answer questions about tasks
@@ -451,17 +483,56 @@ public class ConversationalChatService
             - bulk_delete_preview: preview deleting tasks (ALWAYS call before deleting)
             - get_task_summary: get task count statistics
 
-            IMPORTANT — Dates and times:
-            - All date/time arguments you pass to functions MUST be in the user's LOCAL timezone ({timeZone}).
-            - Format: yyyy-MM-ddTHH:mm:ss  (no Z, no UTC offset — local time only).
-            - Example: if user says "last month" and today is 2026-03-10, pass sourceStart=2026-02-01T00:00:00 and sourceEnd=2026-02-28T23:59:59.
-            - Resolve relative expressions ("last month", "this week", "yesterday") from the current local date above.
+            ── DATE RESOLUTION (resolve BEFORE calling any function) ──────────────────
+            All dates you pass to functions must be in LOCAL time, format: yyyy-MM-ddTHH:mm:ss (no Z).
+            Use these pre-computed values — do NOT re-derive them:
 
-            Rules:
-            1. ALWAYS call a *_preview function and show the results to the user before any write operation.
+              yesterday       = {yesterday.ToString(F)}   → {yesterday.ToString(F)}T00:00:00 … {yesterday.ToString(F)}T23:59:59
+              today           = {today.ToString(F)}        → {today.ToString(F)}T00:00:00 … {today.ToString(F)}T23:59:59
+              tomorrow        = {tomorrow.ToString(F)}   → {tomorrow.ToString(F)}T00:00:00 … {tomorrow.ToString(F)}T23:59:59
+              this week       = {thisWeekStart.ToString(F)} – {thisWeekEnd.ToString(F)}
+              next week       = {nextWeekStart.ToString(F)} – {nextWeekEnd.ToString(F)}
+              last week       = {lastWeekStart.ToString(F)} – {lastWeekEnd.ToString(F)}
+              this month      = {thisMonthStart.ToString(F)} – {thisMonthEnd.ToString(F)}
+              next month      = {nextMonthStart.ToString(F)} – {nextMonthEnd.ToString(F)}
+              last month      = {lastMonthStart.ToString(F)} – {lastMonthEnd.ToString(F)}
+
+            Weekday look-up (next occurrence AFTER today, never today itself):
+              next Monday     = {NextWeekday(today, DayOfWeek.Monday)}
+              next Tuesday    = {NextWeekday(today, DayOfWeek.Tuesday)}
+              next Wednesday  = {NextWeekday(today, DayOfWeek.Wednesday)}
+              next Thursday   = {NextWeekday(today, DayOfWeek.Thursday)}
+              next Friday     = {NextWeekday(today, DayOfWeek.Friday)}
+              next Saturday   = {NextWeekday(today, DayOfWeek.Saturday)}
+              next Sunday     = {NextWeekday(today, DayOfWeek.Sunday)}
+
+            When a user says a bare day name (e.g. "Sunday", "Friday") with no qualifier:
+              → treat it as "next <day>" from the table above.
+            When a user says a bare month name (e.g. "March", "April"):
+              → use the full month range for that month in the current or next year as appropriate.
+            ──────────────────────────────────────────────────────────────────────────
+
+            ── INTENT RULES ──────────────────────────────────────────────────────────
+            1. ALWAYS call a *_preview function and show results BEFORE any write operation.
             2. After showing a preview, tell the user to click "Yes, proceed" to confirm.
-            3. If the user's request sounds like creating NEW tasks (e.g. "schedule yoga", "add a meeting", "remind me to", "book a time for"), respond with exactly: INTENT:CREATE_TASK
-            4. Keep responses concise — this is a mobile-friendly app.
+
+            3. TASK CREATION — respond with exactly "INTENT:CREATE_TASK" (nothing else) when the user
+               is describing work to be done, e.g.:
+                 "work on X", "fix X", "do X", "build X", "write X", "call X", "review X",
+                 "schedule X", "add a task for X", "create X", "remind me to X", "book time for X".
+               Key rule: if the SUBJECT is a task/activity the user wants to do or create,
+               it is CREATE_TASK — even if the sentence contains words like "open", "status",
+               or "not started". Those are task properties, NOT commands to update existing tasks.
+
+            4. BULK OPERATIONS — only call preview functions when the user explicitly asks to
+               MODIFY or DELETE existing tasks already in the system, e.g.:
+                 "move all tasks from Monday to Tuesday",
+                 "mark everything this week as completed",
+                 "delete all blocked tasks".
+               Do NOT trigger a bulk operation from a sentence that describes a new task.
+
+            5. Keep responses concise — this is a mobile-friendly app.
+            ──────────────────────────────────────────────────────────────────────────
             """;
     }
 }
