@@ -146,12 +146,13 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddControllers();
 
 // Add CORS policy
+var allowedOrigins = builder.Configuration["Cors:AllowedOrigins"]?.Split(',') ?? [];
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp",
-        builder =>
+    options.AddPolicy("FrontendCors",
+        policy =>
         {
-            builder.WithOrigins("http://localhost:3000") // tbd need to read from configRL
+            policy.WithOrigins(allowedOrigins)
                    .AllowAnyMethod()
                    .AllowAnyHeader()
                    .AllowCredentials();
@@ -203,7 +204,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
-app.UseCors("AllowReactApp"); // Apply CORS policy
+app.UseCors("FrontendCors");
 app.UseHttpsRedirection();
 app.MapControllers();
 

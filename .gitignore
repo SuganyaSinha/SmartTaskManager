@@ -29,7 +29,6 @@ Service/obj/
 Service/*.user
 Service/*.suo
 Service/*.pdb
-Service/appsettings.json
 Service/appsettings.Development.json
 Service/appsettings.Production.json
 Service/*.log
