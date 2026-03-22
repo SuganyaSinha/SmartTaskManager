@@ -5,6 +5,13 @@ using SmartTaskManager.Data;
 [Route("api/[controller]")]
 public class PingController : ControllerBase
 {
+    private readonly ILogger<PingController> _logger;
+
+    public PingController(ILogger<PingController> logger)
+    {
+        _logger = logger;
+    }
+
     [HttpGet]
     public IActionResult Ping() => Ok(new { status = "ok", message = "API is reachable", timestamp = DateTime.UtcNow });
 
@@ -19,6 +26,7 @@ public class PingController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "MongoDB ping failed");
             return StatusCode(503, new { status = "error", message = ex.Message, timestamp = DateTime.UtcNow });
         }
     }
