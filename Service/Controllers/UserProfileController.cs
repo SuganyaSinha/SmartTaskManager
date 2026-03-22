@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UserProfileController : BaseController
 {
     private readonly IUserProfileService _userProfileService;

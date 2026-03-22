@@ -11,18 +11,23 @@ using Microsoft.SemanticKernel;
 using Microsoft.OpenApi.Models;
 using Serilog;
 
-Log.Logger = new LoggerConfiguration()
+var isProduction = (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production") == "Production";
+
+var logConfig = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.AspNetCore", Serilog.Events.LogEventLevel.Warning)
     .Enrich.FromLogContext()
-    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-    .WriteTo.File(
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
+
+if (!isProduction)
+    logConfig = logConfig.WriteTo.File(
         path: "logs/app-.log",
         rollingInterval: RollingInterval.Day,
         retainedFileCountLimit: 7,
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-    .CreateLogger();
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}");
+
+Log.Logger = logConfig.CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -205,9 +210,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseSerilogRequestLogging();
 app.UseCors("FrontendCors");
-app.UseHttpsRedirection();
+
+if (!app.Environment.IsProduction())
+    app.UseHttpsRedirection();
+
 app.MapControllers();
 
-app.Run();
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+app.Run($"http://0.0.0.0:{port}");
 
 
