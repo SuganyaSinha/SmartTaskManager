@@ -7,6 +7,7 @@ import { useApiToken } from './utilities/useApiToken';
 import { setAuthTokenGetter } from './services/api';
 
 import NavBar from './pages/NavBar';
+import UpdatePrompt from './components/UpdatePrompt';
 import TaskScheduler from './pages/TaskScheduler';
 import TaskCalendarView from './pages/TaskCalendarView';
 import NewTask from './pages/NewTask';
@@ -36,6 +37,7 @@ function App() {
   return (
     <>
       <AuthTokenSetup />
+      <UpdatePrompt />
       <div className="stm-app">
         <NavBar />
         <div className="stm-content">
