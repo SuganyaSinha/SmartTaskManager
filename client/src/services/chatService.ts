@@ -5,7 +5,8 @@ import moment from 'moment';
 export const sendChatMessage = async (
   userMessage: string,
   sessionId: string,
-  confirmed = false
+  confirmed = false,
+  signal?: AbortSignal
 ): Promise<ChatResponse> => {
   const currentDate = moment().format('YYYY-MM-DDTHH:mm:ssZ');
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -20,6 +21,7 @@ export const sendChatMessage = async (
 
   const response = await api.post<ChatResponse>('/api/chat', request, {
     headers: { 'Content-Type': 'application/json' },
+    signal,
   });
 
   return response.data;

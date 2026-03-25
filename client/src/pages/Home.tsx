@@ -49,6 +49,7 @@ function Home() {
 
   const calendarRef = useRef<FullCalendar>(null);
   const audioInputRef = useRef<AudioInputHandle>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Shared tasks (fetched once, updated on schedule/edit/delete)
   const [tasks, setTasks] = useState<NewTask[]>([]);
@@ -223,8 +224,12 @@ function Home() {
     setIsScheduling(true);
     setSchedulingError(null);
     setSchedulingResults([]);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const response = await postUserInput(userInput);
+      const response = await postUserInput(userInput, controller.signal);
       setSchedulingResults(response);
       setTasks((prev) => [
         ...prev,
@@ -240,10 +245,19 @@ function Home() {
       setOverdueExpanded(false);
       setUpcomingExpanded(false);
     } catch (err) {
-      setSchedulingError(err instanceof Error ? err.message : "Failed to generate schedule.");
+      if ((err as { name?: string })?.name === 'CanceledError' || (err as { name?: string })?.name === 'AbortError') {
+        // User stopped — silently reset
+      } else {
+        setSchedulingError(err instanceof Error ? err.message : "Failed to generate schedule.");
+      }
     } finally {
+      abortControllerRef.current = null;
       setIsScheduling(false);
     }
+  };
+
+  const handleStopScheduling = () => {
+    abortControllerRef.current?.abort();
   };
 
   const handleTranscriptChange = useCallback((transcript: string) => {
@@ -367,18 +381,15 @@ function Home() {
           />
         </div>
 
-        <button onClick={handleUserSubmit} disabled={isScheduling} className="tcv-btn-generate">
-          {isScheduling ? (
-            <>
-              <svg className="tcv-spinner" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="15 50" />
-              </svg>
-              Scheduling…
-            </>
-          ) : (
-            "Generate Schedule"
-          )}
-        </button>
+        {isScheduling ? (
+          <button onClick={handleStopScheduling} className="tcv-btn-generate tcv-btn-stop">
+            Stop
+          </button>
+        ) : (
+          <button onClick={handleUserSubmit} disabled={!userInput.trim()} className="tcv-btn-generate">
+            Generate Schedule
+          </button>
+        )}
 
         <AudioInput ref={audioInputRef} onTranscriptChange={handleTranscriptChange} />
 

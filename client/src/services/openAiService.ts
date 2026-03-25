@@ -15,7 +15,7 @@ interface ServerScheduledTask {
   AllocationNote: string;
 }
 
-export const postUserInput = async (input: string): Promise<ScheduledTaskWithNotes[]> => {
+export const postUserInput = async (input: string, signal?: AbortSignal): Promise<ScheduledTaskWithNotes[]> => {
   try {
     const currentDate = moment().format('YYYY-MM-DDTHH:mm:ssZ');
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -26,6 +26,7 @@ export const postUserInput = async (input: string): Promise<ScheduledTaskWithNot
         timeZone: timeZone
     }, {
         headers: { 'Content-Type': 'application/json' },
+        signal,
     });
 
 

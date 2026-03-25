@@ -108,6 +108,7 @@ const ChatScheduler = () => {
   const [pendingConfirmation, setPendingConfirmation] = useState<PreviewData | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioInputRef = useRef<AudioInputHandle>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -185,8 +186,11 @@ const ChatScheduler = () => {
     setIsLoading(true);
     setError(null);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const response = await sendChatMessage(confirmed ? text || messageText : text, sessionId, confirmed);
+      const response = await sendChatMessage(confirmed ? text || messageText : text, sessionId, confirmed, controller.signal);
 
       let createdTaskIds: string[] | undefined;
       if (response.messageType === 'tasks_created' && response.scheduledTasks?.length) {
@@ -224,16 +228,25 @@ const ChatScheduler = () => {
 
       await refreshSessions();
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
-      setError(errorMsg);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: errorMsg,
-        messageType: 'error',
-      }]);
+      if ((err as { name?: string })?.name === 'CanceledError' || (err as { name?: string })?.name === 'AbortError') {
+        // User stopped the request — silently reset
+      } else {
+        const errorMsg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+        setError(errorMsg);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: errorMsg,
+          messageType: 'error',
+        }]);
+      }
     } finally {
+      abortControllerRef.current = null;
       setIsLoading(false);
     }
+  };
+
+  const handleStop = () => {
+    abortControllerRef.current?.abort();
   };
 
   const handleCancel = () => {
@@ -504,16 +517,21 @@ const ChatScheduler = () => {
             onKeyDown={handleKeyDown}
             placeholder="Ask me anything about your tasks..."
             rows={2}
-            disabled={isLoading}
           />
           <AudioInput ref={audioInputRef} onTranscriptChange={handleTranscriptChange} />
-          <button
-            className="cs-send-btn"
-            onClick={() => handleSend()}
-            disabled={isLoading || !inputValue.trim()}
-          >
-            Send
-          </button>
+          {isLoading ? (
+            <button className="cs-send-btn cs-stop-btn" onClick={handleStop}>
+              Stop
+            </button>
+          ) : (
+            <button
+              className="cs-send-btn"
+              onClick={() => handleSend()}
+              disabled={!inputValue.trim()}
+            >
+              Send
+            </button>
+          )}
         </div>
       </div>
 

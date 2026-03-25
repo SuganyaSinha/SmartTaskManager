@@ -112,6 +112,14 @@
   box-shadow: none;
 }
 
+.tcv-btn-stop {
+  background: #ef4444;
+}
+.tcv-btn-stop:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
 .tcv-spinner {
   width: 15px;
   height: 15px;

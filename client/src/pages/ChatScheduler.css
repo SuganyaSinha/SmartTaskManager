@@ -498,6 +498,8 @@
 
 .cs-send-btn:hover:not(:disabled) { background: #2563eb; }
 .cs-send-btn:disabled { background: #93c5fd; cursor: not-allowed; }
+.cs-stop-btn { background: #ef4444; }
+.cs-stop-btn:hover { background: #dc2626; }
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
