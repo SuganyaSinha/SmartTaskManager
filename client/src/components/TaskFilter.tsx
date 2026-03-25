@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { TaskStatus } from "../types/common";
 import { TaskFilter as TaskFilterType } from "../types/common";
 
@@ -31,6 +32,8 @@ const combineDateTime = (datePart: string, timePart: string): Date => {
 };
 
 const TaskFilter: React.FC<TaskFilterProps> = ({ value, onChange }) => {
+  const [expanded, setExpanded] = useState(true);
+
   const update = (changes: Partial<TaskFilterType>) => {
     onChange({ ...value, ...changes });
   };
@@ -58,8 +61,19 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ value, onChange }) => {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Filters</h2>
-        {hasFilters && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1 text-xs font-semibold text-gray-500 uppercase tracking-wide hover:text-gray-700"
+        >
+          Filters
+          <span className="text-slate-400 text-[0.6rem] ml-1">{expanded ? "▲" : "▼"}</span>
+          {hasFilters && !expanded && (
+            <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] font-bold">
+              ●
+            </span>
+          )}
+        </button>
+        {hasFilters && expanded && (
           <button
             onClick={() => onChange({})}
             className="text-xs text-blue-500 hover:text-blue-700 font-medium"
@@ -69,7 +83,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ value, onChange }) => {
         )}
       </div>
 
-      <div className="flex flex-col gap-3">
+      {expanded && <div className="flex flex-col gap-3">
         {/* Row 1: Title, Status, Priority */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
@@ -167,7 +181,7 @@ const TaskFilter: React.FC<TaskFilterProps> = ({ value, onChange }) => {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 };
