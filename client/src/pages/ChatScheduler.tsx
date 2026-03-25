@@ -223,11 +223,12 @@ const ChatScheduler = () => {
       }]);
 
       await refreshSessions();
-    } catch {
-      setError('Something went wrong. Please try again.');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      setError(errorMsg);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: errorMsg,
         messageType: 'error',
       }]);
     } finally {

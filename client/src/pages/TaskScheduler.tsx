@@ -196,7 +196,7 @@ const TaskScheduler = () => {
         }
         catch(err)
         {
-            setError("Could not get data.Error in handleSubmit");
+            setError(err instanceof Error ? err.message : "Could not get data.");
         }
         finally{
             setIsLoading(false);

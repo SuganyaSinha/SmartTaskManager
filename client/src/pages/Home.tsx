@@ -239,8 +239,8 @@ function Home() {
       setRightPanel("calendar");
       setOverdueExpanded(false);
       setUpcomingExpanded(false);
-    } catch {
-      setSchedulingError("Failed to generate schedule.");
+    } catch (err) {
+      setSchedulingError(err instanceof Error ? err.message : "Failed to generate schedule.");
     } finally {
       setIsScheduling(false);
     }

@@ -16,6 +16,9 @@ const api = axios.create({
 // If the token fetch fails (e.g. missing refresh token), useApiToken
 // handles the redirect to login before the error propagates.
 api.interceptors.request.use(async (config) => {
+  if (!navigator.onLine) {
+    throw new Error("You're offline. Please check your connection and try again.");
+  }
   if (_getToken) {
     const token = await _getToken();
     config.headers.Authorization = `Bearer ${token}`;
