@@ -24,10 +24,10 @@ const inputClass =
   "w-full bg-[#f8fafc] border-[1.5px] border-[#e2e8f0] rounded-[10px] px-3 py-2.5 text-sm text-[#334155] placeholder-[#cbd5e1] focus:outline-none focus:border-blue-400 focus:ring-[3px] focus:ring-blue-100 transition-all";
 
 const labelClass =
-  "block text-[0.7rem] font-bold uppercase tracking-[0.07em] text-[#94a3b8] mb-1.5";
+  "block text-[0.7rem] font-bold uppercase tracking-[0.07em] text-[#475569] mb-1.5";
 
 const sectionTitleClass =
-  "text-[0.7rem] font-bold uppercase tracking-[0.07em] text-[#94a3b8] pb-2 mb-3 border-b border-[#f1f5f9]";
+  "text-[0.7rem] font-bold uppercase tracking-[0.07em] text-[#475569] pb-2 mb-3 border-b border-[#f1f5f9]";
 
 export const UserRoutine: React.FC = () => {
   const [routine, setRoutine] = useState<RoutineProfile>(defaultRoutine);
@@ -109,7 +109,7 @@ export const UserRoutine: React.FC = () => {
 
         <div className="tcv-sidebar-header">
           <span className="tcv-sidebar-title">My Routine</span>
-          <p style={{ fontSize: "0.75rem", color: "#94a3b8", marginTop: 4, lineHeight: 1.4 }}>
+          <p style={{ fontSize: "0.75rem", color: "#64748b", marginTop: 4, lineHeight: 1.4 }}>
             Help us understand your schedule so we can plan tasks better.
           </p>
         </div>
