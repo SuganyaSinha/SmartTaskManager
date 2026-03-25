@@ -55,13 +55,15 @@ const TaskPage = () => {
         <TaskList tasks={tasks} onTaskClick={handleTaskClick} />
       </div>
 
-      <TaskEditModal
-        isOpen={isModalOpen}
-        task={selectedTask}
-        onClose={handleClose}
-        onSave={handleSave}
-        onDelete={handleDelete}
-      />
+      {isModalOpen && selectedTask && (
+        <TaskEditModal
+          isOpen={isModalOpen}
+          task={selectedTask}
+          onClose={handleClose}
+          onSave={handleSave}
+          onDelete={handleDelete}
+        />
+      )}
     </div>
   );
 };
