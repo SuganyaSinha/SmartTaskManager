@@ -448,27 +448,6 @@ function Home() {
             </div>
 
             <div className="home-section">
-              <button className="home-section-header" onClick={() => setOverdueExpanded((v) => !v)}>
-                <span className="home-section-title">
-                  Overdue
-                  {overdueTasks.length > 0 && (
-                    <span className="home-section-badge home-section-badge--red">{overdueTasks.length}</span>
-                  )}
-                </span>
-                <span className="home-section-chevron">{overdueExpanded ? "▲" : "▼"}</span>
-              </button>
-              {overdueExpanded && (
-                overdueTasks.length === 0 ? (
-                  <p className="home-empty-msg">No overdue tasks.</p>
-                ) : (
-                  <div className="home-task-list">
-                    {overdueTasks.map((task) => <TaskCard key={task.id} task={task} onClick={handleTaskClick} />)}
-                  </div>
-                )
-              )}
-            </div>
-
-            <div className="home-section">
               <button className="home-section-header" onClick={() => setUpcomingExpanded((v) => !v)}>
                 <span className="home-section-title">
                   Upcoming
@@ -484,6 +463,27 @@ function Home() {
                 ) : (
                   <div className="home-task-list">
                     {upcomingTasks.map((task) => <TaskCard key={task.id} task={task} onClick={handleTaskClick} />)}
+                  </div>
+                )
+              )}
+            </div>
+
+            <div className="home-section">
+              <button className="home-section-header" onClick={() => setOverdueExpanded((v) => !v)}>
+                <span className="home-section-title">
+                  Overdue
+                  {overdueTasks.length > 0 && (
+                    <span className="home-section-badge home-section-badge--red">{overdueTasks.length}</span>
+                  )}
+                </span>
+                <span className="home-section-chevron">{overdueExpanded ? "▲" : "▼"}</span>
+              </button>
+              {overdueExpanded && (
+                overdueTasks.length === 0 ? (
+                  <p className="home-empty-msg">No overdue tasks.</p>
+                ) : (
+                  <div className="home-task-list">
+                    {overdueTasks.map((task) => <TaskCard key={task.id} task={task} onClick={handleTaskClick} />)}
                   </div>
                 )
               )}
