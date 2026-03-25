@@ -266,6 +266,13 @@
   color: #374151 !important;
 }
 
+/* FullCalendar disables Today when the current view already contains today.
+   Make the disabled state visually obvious so users know why it's inactive. */
+.tcv-calendar-wrap .fc-today-button:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+}
+
 /* Column headers (Mon, Tue…) */
 .tcv-calendar-wrap .fc-col-header-cell {
   padding: 8px 0 !important;
@@ -400,6 +407,11 @@
   width: 100% !important;
 }
 
+/* Last column right gap — prevents event pills from sticking to the scrollbar.
+   Day view gets this naturally from the timegrid layout; month/week need it explicitly. */
+.tcv-calendar-wrap .fc-daygrid-day:last-child .fc-daygrid-day-frame {
+  padding-right: 8px;
+}
 /* "More" events link */
 .tcv-calendar-wrap .fc-daygrid-more-link {
   color: #3b82f6 !important;
@@ -567,8 +579,22 @@
   }
 
   .tcv-calendar-wrap .fc-toolbar.fc-header-toolbar {
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+
+  /* Let the center title shrink so left/right chunks always stay on one row */
+  .tcv-calendar-wrap .fc-toolbar-chunk:nth-child(2) {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .tcv-calendar-wrap .fc-toolbar-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .tcv-calendar-wrap .fc-button {
