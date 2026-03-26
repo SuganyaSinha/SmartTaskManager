@@ -44,5 +44,13 @@ namespace SmartTaskManager.Models.Entities
         [BsonElement("responseJson")]
         [BsonIgnoreIfNull]
         public string? ResponseJson { get; set; }
+
+        /// <summary>
+        /// OpenAI tool_call_id for "tool" role messages.
+        /// Needed to rehydrate tool-result messages into ChatHistory with the correct call linkage.
+        /// </summary>
+        [BsonElement("toolCallId")]
+        [BsonIgnoreIfNull]
+        public string? ToolCallId { get; set; }
     }
 }

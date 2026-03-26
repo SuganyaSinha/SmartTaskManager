@@ -346,10 +346,28 @@ public class ConversationalChatService
 
         foreach (var msg in nonSystem)
         {
-            if (msg.Role == "user")
-                history.AddUserMessage(msg.Content);
-            else
-                history.AddAssistantMessage(msg.Content);
+            switch (msg.Role)
+            {
+                case "user":
+                    history.AddUserMessage(msg.Content);
+                    break;
+
+                case "tool" when msg.ToolCallId != null:
+                    // Reconstruct tool-result message with the correct call linkage so that
+                    // OpenAI does not reject the history with "tool message without tool call".
+                    var resultContent = new FunctionResultContent(
+                        functionName: string.Empty,
+                        pluginName: string.Empty,
+                        callId: msg.ToolCallId,
+                        result: msg.Content);
+                    history.Add(resultContent.ToChatMessage());
+                    break;
+
+                default:
+                    // Covers "assistant" and any future roles we do not yet persist
+                    history.AddAssistantMessage(msg.Content);
+                    break;
+            }
         }
 
         return new ChatSession
@@ -408,13 +426,24 @@ public class ConversationalChatService
 
     private static void TrimHistory(ChatHistory history)
     {
-        // Keep system message (index 0) + last MaxHistoryMessages non-system messages
+        // Keep system message(s) + last MaxHistoryMessages non-system messages.
+        // IMPORTANT: only trim at user-message boundaries to avoid leaving orphaned
+        // tool-result messages whose preceding assistant tool-call was removed —
+        // that would cause OpenAI to reject the history with "tool message without tool call".
         var systemMessages = history.Where(m => m.Role == AuthorRole.System).ToList();
         var otherMessages = history.Where(m => m.Role != AuthorRole.System).ToList();
 
         if (otherMessages.Count <= MaxHistoryMessages) return;
 
-        var trimmed = otherMessages.TakeLast(MaxHistoryMessages).ToList();
+        // Take the last MaxHistoryMessages candidates, then advance past any leading
+        // non-user messages (e.g. a tool_result or assistant-with-calls fragment that
+        // lost its preceding counterpart due to the window boundary).
+        var candidates = otherMessages.TakeLast(MaxHistoryMessages).ToList();
+        int startIdx = 0;
+        while (startIdx < candidates.Count && candidates[startIdx].Role != AuthorRole.User)
+            startIdx++;
+
+        var trimmed = candidates.Skip(startIdx).ToList();
         history.Clear();
         foreach (var m in systemMessages) history.Add(m);
         foreach (var m in trimmed) history.Add(m);
