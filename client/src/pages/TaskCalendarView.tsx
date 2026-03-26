@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -43,7 +43,7 @@ const TaskCalendarView = () => {
     : new Date();
 
   const calendarRef = useRef<FullCalendar>(null);
-  const loadedMonthRef = useRef<{ year: number; month: number } | null>(null);
+  const loadedRangeRef = useRef<string | null>(null);
 
   const [events, setEvents] = useState<NewTask[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -72,11 +72,9 @@ const TaskCalendarView = () => {
     [events]
   );
 
-  const loadMonth = useCallback(async (date: Date) => {
+  const loadRange = useCallback(async (start: Date, end: Date) => {
     try {
-      const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
-      const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-      const response = await getTasks({ start: startDate, end: endDate });
+      const response = await getTasks({ start, end });
       setEvents(
         response.map((task) => ({
           ...task,
@@ -90,29 +88,14 @@ const TaskCalendarView = () => {
     }
   }, []);
 
-  useEffect(() => {
-    loadedMonthRef.current = {
-      year: initialDate.getFullYear(),
-      month: initialDate.getMonth() + 1,
-    };
-    loadMonth(initialDate);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleDatesSet = useCallback(
     (info: { start: Date; end: Date }) => {
-      const center = new Date((info.start.getTime() + info.end.getTime()) / 2);
-      const year = center.getFullYear();
-      const month = center.getMonth() + 1;
-      if (
-        !loadedMonthRef.current ||
-        loadedMonthRef.current.year !== year ||
-        loadedMonthRef.current.month !== month
-      ) {
-        loadedMonthRef.current = { year, month };
-        loadMonth(center);
-      }
+      const key = `${info.start.getTime()}-${info.end.getTime()}`;
+      if (loadedRangeRef.current === key) return;
+      loadedRangeRef.current = key;
+      loadRange(info.start, info.end);
     },
-    [loadMonth]
+    [loadRange]
   );
 
   const handleEventClick = (info: { event: { id: string } }) => {
