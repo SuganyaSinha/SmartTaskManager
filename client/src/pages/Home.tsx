@@ -37,7 +37,6 @@ const STAT_CARDS = [
   { status: TaskStatus.NotStarted, label: "Not Started", color: "#f59e0b", bg: "#fffbeb", border: "#fde68a" },
   { status: TaskStatus.InProgress, label: "In Progress", color: "#3b82f6", bg: "#eff6ff", border: "#bfdbfe" },
   { status: TaskStatus.Completed,  label: "Completed",   color: "#22c55e", bg: "#f0fdf4", border: "#bbf7d0" },
-  { status: TaskStatus.Blocked,    label: "Blocked",     color: "#ef4444", bg: "#fef2f2", border: "#fecaca" },
 ];
 
 type RightPanel = "overview" | "calendar" | "list" | "productivity";
@@ -387,7 +386,7 @@ function Home() {
           </button>
         ) : (
           <button onClick={handleUserSubmit} disabled={!userInput.trim()} className="tcv-btn-generate">
-            Generate Schedule
+            Schedule with AI
           </button>
         )}
 
