@@ -82,6 +82,36 @@
   cursor: pointer;
   border-bottom: 1px solid #e2e8f0;
   transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cs-session-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cs-session-delete-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.12s, color 0.12s;
+}
+
+.cs-session-item:hover .cs-session-delete-btn {
+  opacity: 1;
+}
+
+.cs-session-delete-btn:hover {
+  color: #ef4444;
 }
 
 .cs-session-item:hover { background: #e2e8f0; }

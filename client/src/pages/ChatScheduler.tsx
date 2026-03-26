@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import moment from 'moment';
 import { TaskStatus, ChatMessage, PreviewData, QueryTaskResult, NewTask, ScheduledTaskResult, ChatSessionSummary } from '../types/common';
-import { sendChatMessage, getChatSessions, getSessionMessages } from '../services/chatService';
+import { sendChatMessage, getChatSessions, getSessionMessages, deleteChatSession } from '../services/chatService';
 import { createTask, getTaskById, updateTask, deleteTask } from '../services/taskService';
 import AudioInput, { type AudioInputHandle } from './AudioInput';
 import TaskEditModal from '../components/TaskEditModal';
@@ -172,6 +172,19 @@ const ChatScheduler = () => {
     }
   };
 
+  const handleDeleteSession = async (e: React.MouseEvent, targetSessionId: string) => {
+    e.stopPropagation();
+    try {
+      await deleteChatSession(targetSessionId);
+      setSessions(prev => prev.filter(s => s.sessionId !== targetSessionId));
+      if (targetSessionId === sessionId) {
+        handleNewChat();
+      }
+    } catch {
+      setError('Failed to delete chat session.');
+    }
+  };
+
   // ── Chat send ──────────────────────────────────────────────────────────────
   const handleSend = async (confirmed = false) => {
     const text = inputValue.trim();
@@ -320,10 +333,19 @@ const ChatScheduler = () => {
               className={`cs-session-item${s.sessionId === sessionId ? ' cs-session-item--active' : ''}`}
               onClick={() => handleSelectSession(s.sessionId)}
             >
-              <div className="cs-session-title">{s.title || 'New Chat'}</div>
-              <div className="cs-session-meta">
-                {s.messageCount} msg · {moment(s.lastActivity).fromNow()}
+              <div className="cs-session-item-body">
+                <div className="cs-session-title">{s.title || 'New Chat'}</div>
+                <div className="cs-session-meta">
+                  {s.messageCount} msg · {moment(s.lastActivity).fromNow()}
+                </div>
               </div>
+              <button
+                className="cs-session-delete-btn"
+                title="Delete chat"
+                onClick={e => handleDeleteSession(e, s.sessionId)}
+              >
+                ×
+              </button>
             </li>
           ))}
           {sessions.length === 0 && !sessionsLoading && (

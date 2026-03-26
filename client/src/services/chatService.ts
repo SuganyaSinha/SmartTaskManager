@@ -36,3 +36,7 @@ export const getSessionMessages = async (sessionId: string): Promise<SessionMess
   const response = await api.get<SessionMessageDto[]>(`/api/chat/sessions/${sessionId}/messages`);
   return response.data;
 };
+
+export const deleteChatSession = async (sessionId: string): Promise<void> => {
+  await api.delete(`/api/chat/sessions/${sessionId}`);
+};

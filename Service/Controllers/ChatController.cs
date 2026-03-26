@@ -82,6 +82,25 @@ public class ChatController : BaseController
     }
 
     [Authorize]
+    [HttpDelete("sessions/{sessionId}")]
+    public async Task<IActionResult> DeleteSession(string sessionId)
+    {
+        try
+        {
+            var entity = await _chatSessionRepository.GetByIdAsync(sessionId);
+            if (entity == null) return NotFound();
+            if (entity.UserId != UserId) return Forbid();
+
+            await _chatSessionRepository.DeleteAsync(sessionId, UserId);
+            return NoContent();
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "Failed to delete session.");
+        }
+    }
+
+    [Authorize]
     [HttpGet("sessions/{sessionId}/messages")]
     public async Task<IActionResult> GetSessionMessages(string sessionId)
     {
