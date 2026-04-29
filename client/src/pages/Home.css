@@ -101,7 +101,27 @@
 }
 
 .home-section-header:hover {
-  background: #f8fafc;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Upcoming section — blue accent header */
+.home-section--upcoming .home-section-header {
+  background: #dbeafe;
+  border-left: 3px solid #3b82f6;
+}
+
+.home-section--upcoming .home-section-header:hover {
+  background: #bfdbfe;
+}
+
+/* Overdue section — red accent header */
+.home-section--overdue .home-section-header {
+  background: #fee2e2;
+  border-left: 3px solid #ef4444;
+}
+
+.home-section--overdue .home-section-header:hover {
+  background: #fecaca;
 }
 
 .home-section-title {

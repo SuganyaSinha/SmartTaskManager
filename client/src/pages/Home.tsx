@@ -457,7 +457,7 @@ function Home() {
               ))}
             </div>
 
-            <div className="home-section">
+            <div className="home-section home-section--upcoming">
               <button className="home-section-header" onClick={() => setUpcomingExpanded((v) => !v)}>
                 <span className="home-section-title">
                   Upcoming
@@ -478,7 +478,7 @@ function Home() {
               )}
             </div>
 
-            <div className="home-section">
+            <div className="home-section home-section--overdue">
               <button className="home-section-header" onClick={() => setOverdueExpanded((v) => !v)}>
                 <span className="home-section-title">
                   Overdue
