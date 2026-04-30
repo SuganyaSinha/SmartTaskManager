@@ -33,12 +33,7 @@ namespace TaskManagerApi.Controllers
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-
-            if (TimeSpan.TryParse(routine.WakeUpTime, out var wakeUp) &&
-                TimeSpan.TryParse(routine.SleepTime, out var sleep) &&
-                sleep <= wakeUp)
-                return BadRequest("SleepTime must be after WakeUpTime.");
-
+           
             if (routine.WorkStyleSettings != null &&
                 TimeSpan.TryParse(routine.WorkStyleSettings.WorkHourStart, out var workStart) &&
                 TimeSpan.TryParse(routine.WorkStyleSettings.WorkHourEnd, out var workEnd) &&
@@ -60,8 +55,8 @@ namespace TaskManagerApi.Controllers
 
             if (TimeSpan.TryParse(routine.WakeUpTime, out var wakeUp) &&
                 TimeSpan.TryParse(routine.SleepTime, out var sleep) &&
-                sleep <= wakeUp)
-                return BadRequest("SleepTime must be after WakeUpTime.");
+                sleep == wakeUp)
+                return BadRequest("SleepTime and WakeUpTime cannot be the same.");
 
             if (routine.WorkStyleSettings != null &&
                 TimeSpan.TryParse(routine.WorkStyleSettings.WorkHourStart, out var workStart) &&

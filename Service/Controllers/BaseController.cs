@@ -12,7 +12,7 @@ public abstract class BaseController : ControllerBase
             {
                 _userId = User.FindFirst("sub")?.Value;
                 if (string.IsNullOrEmpty(_userId))
-                    throw new Exception("Could not get the User Id from the token");
+                    throw new UnauthorizedAccessException("Could not get the User Id from the token.");
             }
             return _userId;
         }

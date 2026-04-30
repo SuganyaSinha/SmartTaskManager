@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using SmartTaskManager.Models.DTO;
 using SmartTaskManager.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 
 namespace TaskManagerApi.Controllers
 {
@@ -21,7 +20,6 @@ namespace TaskManagerApi.Controllers
         [HttpGet]
         public async Task<ActionResult<List<TaskItem>>> GetTasks([FromQuery] TaskFilterRequest filter)
         {
-            var userId = UserId;
             var tasks = await _taskService.GetTasksAsync(UserId, filter);
             return Ok(tasks);
         }
@@ -33,7 +31,10 @@ namespace TaskManagerApi.Controllers
                 return BadRequest("Task ID is required.");
 
             var task = await _taskService.GetTaskByIdAsync(id);
-            return task == null ? NotFound() : Ok(task);
+            if (task == null || task.UserId != UserId)
+                return NotFound();
+
+            return Ok(task);
         }
 
         [HttpPost]

@@ -6,20 +6,23 @@ using SmartTaskManager.Repositary;
 
 [ApiController]
 [Route("api/chat")]
+[Authorize]
 public class ChatController : BaseController
 {
     private readonly ConversationalChatService _chatService;
     private readonly IChatSessionRepository _chatSessionRepository;
+    private readonly ILogger<ChatController> _logger;
 
     public ChatController(
         ConversationalChatService chatService,
-        IChatSessionRepository chatSessionRepository)
+        IChatSessionRepository chatSessionRepository,
+        ILogger<ChatController> logger)
     {
         _chatService = chatService;
         _chatSessionRepository = chatSessionRepository;
+        _logger = logger;
     }
 
-    [Authorize]
     [HttpPost]
     public async Task<IActionResult> Chat([FromBody] ChatRequest request)
     {
@@ -43,73 +46,59 @@ public class ChatController : BaseController
             var response = await _chatService.ProcessMessageAsync(request, UserId);
             return Ok(response);
         }
-        catch (TimeZoneNotFoundException)
+        catch (TimeZoneNotFoundException ex)
         {
+            _logger.LogWarning(ex, "Unknown TimeZone: '{TimeZone}'", request.TimeZone);
             return BadRequest($"Unknown TimeZone: '{request.TimeZone}'. Use a Windows TimeZone ID such as 'Eastern Standard Time'.");
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            _logger.LogWarning(ex, "Unauthorized chat attempt for session {SessionId}", request.SessionId);
             return Forbid();
         }
         catch (ArgumentException ex)
         {
+            _logger.LogWarning(ex, "Invalid argument in chat request for session {SessionId}", request.SessionId);
             return BadRequest(ex.Message);
         }
     }
 
-    [Authorize]
     [HttpGet("sessions")]
     public async Task<IActionResult> GetSessions()
     {
-        try
-        {
-            var entities = await _chatSessionRepository.GetByUserIdAsync(UserId);
+        var entities = await _chatSessionRepository.GetByUserIdAsync(UserId);
 
-            var summaries = entities.Select(e => new ChatSessionSummary
-            {
-                SessionId = e.SessionId,
-                Title = string.IsNullOrWhiteSpace(e.Title) ? "New Chat" : e.Title,
-                LastActivity = e.LastActivity,
-                MessageCount = e.Messages.Count(m => m.Role != "system")
-            }).ToList();
-
-            return Ok(summaries);
-        }
-        catch (Exception)
+        var summaries = entities.Select(e => new ChatSessionSummary
         {
-            return StatusCode(500, "Failed to retrieve sessions.");
-        }
+            SessionId = e.SessionId,
+            Title = string.IsNullOrWhiteSpace(e.Title) ? "New Chat" : e.Title,
+            LastActivity = e.LastActivity,
+            MessageCount = e.Messages.Count(m => m.Role != "system")
+        }).ToList();
+
+        return Ok(summaries);
     }
 
-    [Authorize]
     [HttpDelete("sessions/{sessionId}")]
     public async Task<IActionResult> DeleteSession(string sessionId)
     {
-        try
-        {
-            var entity = await _chatSessionRepository.GetByIdAsync(sessionId);
-            if (entity == null) return NotFound();
-            if (entity.UserId != UserId) return Forbid();
+        var entity = await _chatSessionRepository.GetByIdAsync(sessionId);
+        if (entity == null) return NotFound();
+        if (entity.UserId != UserId) return Forbid();
 
-            await _chatSessionRepository.DeleteAsync(sessionId, UserId);
-            return NoContent();
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, "Failed to delete session.");
-        }
+        await _chatSessionRepository.DeleteAsync(sessionId, UserId);
+        return NoContent();
     }
 
-    [Authorize]
     [HttpGet("sessions/{sessionId}/messages")]
     public async Task<IActionResult> GetSessionMessages(string sessionId)
     {
+        var entity = await _chatSessionRepository.GetByIdAsync(sessionId);
+        if (entity == null) return NotFound();
+        if (entity.UserId != UserId) return Forbid();
+
         try
         {
-            var entity = await _chatSessionRepository.GetByIdAsync(sessionId);
-            if (entity == null) return NotFound();
-            if (entity.UserId != UserId) return Forbid();
-
             var jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -151,9 +140,10 @@ public class ChatController : BaseController
 
             return Ok(dtos);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return StatusCode(500, "Failed to retrieve session messages.");
+            _logger.LogError(ex, "Failed to process messages for session {SessionId}", sessionId);
+            throw;
         }
     }
 }
