@@ -20,7 +20,7 @@ export const postUserInput = async (input: string, signal?: AbortSignal): Promis
     const currentDate = moment().format('YYYY-MM-DDTHH:mm:ssZ');
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-    const response = await api.post('/api/openai/smart-schedule', {
+    const response = await api.post('/api/task-planner/schedule', {
         userInput: input,
         currentDate: currentDate,
         timeZone: timeZone

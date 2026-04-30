@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { NewTask, TaskStatus } from "../types/common";
-import { postUserInput } from '../services/openAiService';
+import { postUserInput } from '../services/taskPlannerService';
 import { getTasks, updateTask, deleteTask } from '../services/taskService';
 import AudioInput from "./AudioInput";
 import TaskEditModal from "../components/TaskEditModal";

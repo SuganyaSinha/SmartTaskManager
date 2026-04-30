@@ -136,7 +136,7 @@ builder.Services.AddScoped<IChatSessionRepository, ChatSessionRepository>();
 
 
 // Register Services
-builder.Services.AddScoped<OpenAiService>(); // tdb this could be singleton
+builder.Services.AddScoped<LegacyTaskPlannerService>(); // tdb this could be singleton
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IPromptService, PromptService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();

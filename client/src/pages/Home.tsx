@@ -7,7 +7,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
 import { NewTask, TaskStatus, ScheduledTaskWithNotes, TaskFilter as TaskFilterType } from "../types/common";
-import { postUserInput } from "../services/openAiService";
+import { postUserInput } from "../services/taskPlannerService";
 import { getAllTasks, getTasks, updateTask, deleteTask } from "../services/taskService";
 import AudioInput, { type AudioInputHandle } from "./AudioInput";
 import TaskEditModal from "../components/TaskEditModal";

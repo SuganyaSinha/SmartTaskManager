@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using SmartTaskManager.Repositary;
 using SmartTaskManager.Models.DTO;
 
-public class OpenAiService
+public class LegacyTaskPlannerService
 {
     private readonly HttpClient _httpClient;
     private readonly ITaskRepository taskRepositary;
@@ -16,7 +16,7 @@ public class OpenAiService
 
     private List<Dictionary<string, string>> _conversationHistory = new();
 
-    public OpenAiService(IHttpClientFactory httpClientFactory,
+    public LegacyTaskPlannerService(IHttpClientFactory httpClientFactory,
                          ITaskRepository _taskRepositary,
                          IOptions<OpenAiConfig> config)
     {

@@ -4,15 +4,15 @@ using SmartTaskManager.Models;
 using SmartTaskManager.Interfaces;
 
 [ApiController]
-[Route("api/openai")]
+[Route("api/task-planner")]
 [Authorize]
-public class OpenAiController : BaseController
+public class TaskPlannerController : BaseController
 {
     private readonly IPromptService _promptService;
     private readonly AIPlannerService _aiPlannerService;
     private readonly SmartSchedulerService _smartSchedulerService;
 
-    public OpenAiController(
+    public TaskPlannerController(
         IPromptService promptService,
         AIPlannerService aiPlannerService,
         SmartSchedulerService smartSchedulerService)
@@ -22,8 +22,8 @@ public class OpenAiController : BaseController
         _smartSchedulerService = smartSchedulerService;
     }
 
-    [HttpPost("ask")]
-    public async Task<IActionResult> AskOpenAi([FromBody] OpenAiRequestBody request)
+    [HttpPost("generate")]
+    public async Task<IActionResult> GenerateTasks([FromBody] OpenAiRequestBody request)
     {
         if (request == null)
             return BadRequest("Request body is required.");
@@ -39,8 +39,8 @@ public class OpenAiController : BaseController
         return Ok(new { response });
     }
 
-    [HttpPost("smart-schedule")]
-    public async Task<IActionResult> SmartSchedule([FromBody] OpenAiRequestBody request)
+    [HttpPost("schedule")]
+    public async Task<IActionResult> Schedule([FromBody] OpenAiRequestBody request)
     {
         if (request == null)
             return BadRequest("Request body is required.");
