@@ -1,10 +1,7 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using MongoDB.Driver.Core.Events;
-using MongoDB.Driver.Linq;
 using SmartTaskManager.Models.DTO;
 using SmartTaskManager.Repositary;
 
@@ -53,20 +50,19 @@ public class AIPlannerService
                                                     },
                                                     _kernel
                                 );
-            string output = result.Content!;
-            return output;
+            if (string.IsNullOrWhiteSpace(result.Content))
+            {
+                _logger.LogWarning("Empty response from AI for user {UserId}", userId);
+                return "[]";
+            }
+
+            return result.Content;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating task plan for user {UserId}", userId);
             throw;
         }
-    //     KernelFunction systemPromptFunction = _kernel.CreateFunctionFromPrompt(
-    //         GetInitialSystemPrompt(),
-    //         functionName: "CreateInitialSystemPrompt",
-    //         description: "Generate the initial system prompt for task planning"
-    //     );
-
     }
 
     private string GetInitialSystemPromptNew()
@@ -125,53 +121,6 @@ Now schedule the tasks from the user's message using the rules above and output 
         ";
     }
 
-     private string GetInitialSystemPrompt()
-    {
-        return 
-       @"You are an intelligent task planner. Your job is to analyze the user's tasks and determine the best way to schedule them. If the user does not specify a timing, suggest the best possible time based on typical productivity hours (e.g., morning for high-priority tasks, afternoon for reviews, evening for personal tasks). Give breaks between the tasks so that brain is not overloaded. Given the following instructions, generate a structured list of tasks in raw JSON format without any escaped characters, newlines, or additional formatting.
-
-        ### Instructions:
-        1. Each task should include the following fields:
-        - **title**: Name of the task.
-        - **day**: Day of the week (e.g., ""Monday"") based on the LOCAL date of the task.
-        - **start**: Start time in LOCAL time (ISO-like format: ""YYYY-MM-DDTHH:mm"")
-        - **end**: End time in LOCAL time (ISO-like format: ""YYYY-MM-DDTHH:mm"")
-        - **priority**: Task priority (high, medium, low).
-        - **comments**: Short description of the task.
-
-        2. **User's routine profile and preferences**
-        [INSERT_ROUTINE_SUMMARY_HERE]
-    
-        2. **Existing Schedule Context**:
-        - The user has the following pre-existing tasks (read-only, do not modify or reschedule these):
-            [INSERT_EXISTING_TASKS_HERE]
-        - Consider the time slots occupied by these existing tasks when scheduling new tasks. Avoid overlapping with existing tasks and ensure the user's total daily load (existing + new tasks) does not exceed 8 hours per day.
-
-        3. **Scheduling Rules for New Tasks**:
-        - Only schedule new tasks based on the user's latest input. Do not alter, delete, or reschedule any existing tasks from the context.
-        - If time is given (e.g., ""6-7""), interpret as local time (e.g., 6 PM to 7 PM).
-        - NEVER schedule tasks in the past relative to the user's current local datetime.
-        - Leave at least a 15-minute break between tasks (existing or new).
-        - If the user's daily load (existing + NewTaskDuration) would exceed 8 hours, prioritize scheduling new tasks on a different day or reduce the scope (e.g., shorten duration) with a comment explaining the adjustment.
-        - If the user specified time for a task conflicts with an existing task, then there is a conflict. So do not schedule task at the user specified time. Instead, apply the following rules:
-            - Schedule the new task at the earliest available time AFTER the conflicting task on the SAME DAY.
-            - If no valid time exists later that day:
-                → Schedule on the NEXT nearest possible day at the closest reasonable time.
- 
-        4. **Formatting Requirements**:
-        - Return only valid JSON as a compact array on a single line.
-        - Do not include any explanations, extra text, newlines (`\n`), indentation, or additional whitespace.
-        - Do not enclose the JSON in quotes or use any escape characters (e.g., `\r\n`, `\n`).
-        - Ensure double quotes are not escaped with backslashes (e.g., use ""title"" not \""title\"").
-        - Output must be a raw, unescaped JSON array that can be directly parsed.
-
-        ## Example Output (Strict JSON Format):
-        [{""title"":""Do yoga"",""day"":""Wednesday"",""start"":""2026-01-28T17:00"",""end"":""2026-01-28T18:00"",""priority"":""medium"",""comments"":""Do yoga on Wednesday at 5 PM.""}]
-
-        Now, generate tasks based on these instructions with current date ""[currentDate]"" and users current timezone as ""[currentTimeZone]"" and return only a valid JSON array without extra formatting.
-        ";
-
-    }
 
     private async Task<string> GetUserRoutine(string userId)
     {
@@ -230,14 +179,10 @@ Now schedule the tasks from the user's message using the rules above and output 
             }
         }
 
-        // Weekend inference from free text
+        // Include free text description if present
         if (!string.IsNullOrWhiteSpace(routine.FreeTextDescription))
         {
-            if (routine.FreeTextDescription.Contains("weekend", StringComparison.OrdinalIgnoreCase) &&
-                routine.FreeTextDescription.Contains("9", StringComparison.OrdinalIgnoreCase))
-            {
-                sb.AppendLine($"- More details about user's routine: {routine.FreeTextDescription}");
-            }
+            sb.AppendLine($"- Additional routine details: {routine.FreeTextDescription}");
         }
 
         return sb.ToString().Trim();
@@ -249,11 +194,9 @@ Now schedule the tasks from the user's message using the rules above and output 
         try
         {
         var now = DateTime.UtcNow;
-
         var startRange = now.AddDays(-5);
         var endRange = now.AddDays(30);
 
-        // First call: NotStarted
         var notStartedFilter = new TaskFilterRequest
         {
             Status = (SmartTaskManager.Models.DTO.TaskStatus)SmartTaskManager.Models.Entities.TaskStatus.NotStarted,
@@ -261,9 +204,6 @@ Now schedule the tasks from the user's message using the rules above and output 
             End = endRange
         };
 
-        var notStartedTasks = await _taskRepositary.GetTasksAsync(userId, notStartedFilter);
-
-        // Second call: InProgress
         var inProgressFilter = new TaskFilterRequest
         {
             Status = (SmartTaskManager.Models.DTO.TaskStatus)SmartTaskManager.Models.Entities.TaskStatus.InProgress,
@@ -271,16 +211,25 @@ Now schedule the tasks from the user's message using the rules above and output 
             End = endRange
         };
 
-        var inProgressTasks = await _taskRepositary.GetTasksAsync(userId, inProgressFilter);
+        // Run both queries in parallel
+        var notStartedTask = _taskRepositary.GetTasksAsync(userId, notStartedFilter);
+        var inProgressTask = _taskRepositary.GetTasksAsync(userId, inProgressFilter);
+        await Task.WhenAll(notStartedTask, inProgressTask);
 
-        // Combine results
-        var tasks = notStartedTasks
-            .Concat(inProgressTasks)
+        var tasks = notStartedTask.Result
+            .Concat(inProgressTask.Result)
             .ToList();
 
-        // Convert the task time to user's local time zone
-        // Also compute the duration of each task     
-        TimeZoneInfo? userLocalTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZone);
+        TimeZoneInfo userLocalTimeZone;
+        try
+        {
+            userLocalTimeZone = TimeZoneInfo.FindSystemTimeZoneById(userTimeZone);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            _logger.LogWarning("Invalid timezone '{TimeZone}' for user {UserId}, defaulting to UTC", userTimeZone, userId);
+            userLocalTimeZone = TimeZoneInfo.Utc;
+        }
 
         var localTasks = tasks
             .Where(t => t.Start.HasValue && t.End.HasValue)
@@ -310,27 +259,7 @@ Now schedule the tasks from the user's message using the rules above and output 
             .ThenBy(t => t.Start)
             .ToList();
 
-        // var groupedTasks = localTasks
-        //     .GroupBy(t => t.Date)
-        //     .OrderBy(g => g.Key)
-        //     .Select(g => new
-        //     {
-        //         Date = g.Key.ToString("yyyy-MM-dd"),
-        //         TotalScheduledHours = Math.Round(g.Sum(t => t.DurationHours), 2),
-        //         Tasks = g.Select(t => new
-        //         {
-        //             Title = t.Title,
-        //             Start = t.Start.ToString("yyyy-MM-ddTHH:mm:ss"),
-        //             End = t.End.ToString("yyyy-MM-ddTHH:mm:ss"),
-        //             Priority = t.Priority,
-        //             Comments = t.Comments,
-        //             Status = t.Status,
-        //             DurationHours = Math.Round(t.DurationHours, 2)
-        //         }).ToList()
-        //     })
-        //     .ToList();
-
-        // Group the task by date and order by the date
+        // Group tasks by date with open slots
         var groupedTasks = localTasks
             .GroupBy(t => t.Date)
             .OrderBy(g => g.Key)

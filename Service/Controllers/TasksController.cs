@@ -30,8 +30,8 @@ namespace TaskManagerApi.Controllers
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest("Task ID is required.");
 
-            var task = await _taskService.GetTaskByIdAsync(id);
-            if (task == null || task.UserId != UserId)
+            var task = await _taskService.GetTaskByIdAsync(id, UserId);
+            if (task == null)
                 return NotFound();
 
             return Ok(task);
@@ -65,8 +65,15 @@ namespace TaskManagerApi.Controllers
             if (task.Start.HasValue && task.End.HasValue && task.End <= task.Start)
                 return BadRequest("End date/time must be after Start date/time.");
 
-            var updatedTask = await _taskService.UpdateTaskAsync(id, UserId, task);
-            return Ok(updatedTask);
+            try
+            {
+                var updatedTask = await _taskService.UpdateTaskAsync(id, UserId, task);
+                return Ok(updatedTask);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
         }
 
         [HttpPatch("{id}")]
