@@ -89,7 +89,7 @@ const Skeleton = ({ className }: { className?: string }) => (
 
 // ─── main page ───────────────────────────────────────────────────────────────
 
-export default function ProductivityPage() {
+export default function ChartsPage() {
   const [period, setPeriod] = useState<Period>('week');
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [stats, setStats] = useState<ProductivityStats | null>(null);
@@ -104,7 +104,7 @@ export default function ProductivityPage() {
       const data = await getProductivityStats(period, anchor);
       setStats(data);
     } catch {
-      setError('Could not load productivity data. Please try again.');
+      setError('Could not load charts data. Please try again.');
     } finally {
       setLoading(false);
     }
