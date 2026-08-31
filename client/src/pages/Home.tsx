@@ -1,137 +1,42 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
-import FullCalendar from "@fullcalendar/react";
-import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
-import { NewTask, TaskStatus, ScheduledTaskWithNotes, TaskFilter as TaskFilterType } from "../types/common";
-import { postUserInput } from "../services/taskPlannerService";
-import { getAllTasks, getTasks, updateTask, deleteTask } from "../services/taskService";
-import AudioInput, { type AudioInputHandle } from "./AudioInput";
+import { NewTask, TaskStatus } from "../types/common";
+import { getAllTasks, updateTask, deleteTask } from "../services/taskService";
+import { getDashboardSnapshot } from "../services/dashboardService";
+import { DashboardSnapshot } from "../types/common";
 import TaskEditModal from "../components/TaskEditModal";
-import TaskFilter from "../components/TaskFilter";
-import TaskList from "../components/TaskList";
 import TaskCard from "../components/TaskCard";
-import "./TaskCalendarView.css";
 import "./Home.css";
 import Landing from "./Landing";
-import ProductivityPage from "./ProductivityPage";
-
-const STATUS_COLORS: Record<string, { bg: string; border: string }> = {
-  [TaskStatus.Completed]:  { bg: "#22c55e", border: "#16a34a" },
-  [TaskStatus.InProgress]: { bg: "#3b82f6", border: "#2563eb" },
-  [TaskStatus.NotStarted]: { bg: "#f59e0b", border: "#d97706" },
-  [TaskStatus.Blocked]:    { bg: "#ef4444", border: "#dc2626" },
-};
-
-const LEGEND = [
-  { label: "Not Started", color: "#f59e0b" },
-  { label: "In Progress", color: "#3b82f6" },
-  { label: "Completed",   color: "#22c55e" },
-  { label: "Blocked",     color: "#ef4444" },
-];
 
 const STAT_CARDS = [
-  { status: TaskStatus.NotStarted, label: "Not Started", color: "#f59e0b", bg: "#fffbeb", border: "#fde68a" },
-  { status: TaskStatus.InProgress, label: "In Progress", color: "#3b82f6", bg: "#eff6ff", border: "#bfdbfe" },
-  { status: TaskStatus.Completed,  label: "Completed",   color: "#22c55e", bg: "#f0fdf4", border: "#bbf7d0" },
+  { status: TaskStatus.NotStarted, label: "Not Started", color: "#f59e0b" },
+  { status: TaskStatus.InProgress, label: "In Progress", color: "#3b82f6" },
+  { status: TaskStatus.Completed, label: "Completed", color: "#22c55e" },
+  { status: TaskStatus.Blocked, label: "Blocked", color: "#ef4444" },
 ];
 
-type RightPanel = "overview" | "calendar" | "list" | "productivity";
+// Feature flag: toggle the AI Snapshot briefing on the dashboard.
+const SHOW_AI_SNAPSHOT = true;
 
 function Home() {
-  const { isAuthenticated, user } = useAuth0();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth0();
 
-  const calendarRef = useRef<FullCalendar>(null);
-  const audioInputRef = useRef<AudioInputHandle>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Shared tasks (fetched once, updated on schedule/edit/delete)
   const [tasks, setTasks] = useState<NewTask[]>([]);
-
-  // AI scheduling
-  const [userInput, setUserInput] = useState("");
-  const [isScheduling, setIsScheduling] = useState(false);
-  const [schedulingError, setSchedulingError] = useState<string | null>(null);
-  const [schedulingResults, setSchedulingResults] = useState<ScheduledTaskWithNotes[]>([]);
-
-  // Right panel — persisted in URL so back navigation restores the active tab
-  const rawTab = searchParams.get("tab");
-  const rightPanel: RightPanel = (rawTab === "calendar" || rawTab === "list" || rawTab === "productivity") ? rawTab : "overview";
-
-  const setRightPanel = (panel: RightPanel) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("tab", panel);
-      return next;
-    }, { replace: true });
-  };
-
   const [overdueExpanded, setOverdueExpanded] = useState(true);
   const [upcomingExpanded, setUpcomingExpanded] = useState(true);
-
-  // Calendar view — persisted in URL so switching tabs doesn't reset the view
-  const calViewParam = searchParams.get("calview") ?? "timeGridWeek";
-
-  const handleCalViewChange = useCallback(
-    (info: { view: { type: string } }) => {
-      const newType = info.view.type;
-      setSearchParams((prev) => {
-        if (prev.get("calview") === newType) return prev;
-        const next = new URLSearchParams(prev);
-        next.set("calview", newType);
-        return next;
-      }, { replace: true });
-    },
-    [setSearchParams]
-  );
-
-  // Modal — shared across calendar, overdue/upcoming cards, list, and scheduler results
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [calendarError, setCalendarError] = useState<string | null>(null);
+  const [aiSnapshot, setAiSnapshot] = useState<DashboardSnapshot | null>(null);
+  const [isSnapshotLoading, setIsSnapshotLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleTaskClick = useCallback((task: NewTask) => {
     setSelectedTaskId(task.id!);
     setIsModalOpen(true);
   }, []);
 
-  // List filters — persisted in URL so back navigation restores filter state
-  const listFilters: TaskFilterType = useMemo(() => {
-    const f: TaskFilterType = {};
-    const status = searchParams.get("status");
-    if (status) f.status = status as TaskFilterType["status"];
-    const title = searchParams.get("ftitle");
-    if (title) f.title = title;
-    const priority = searchParams.get("priority");
-    if (priority) f.priority = priority;
-    const start = searchParams.get("fstart");
-    if (start) f.start = new Date(start);
-    const end = searchParams.get("fend");
-    if (end) f.end = new Date(end);
-    return f;
-  }, [searchParams]);
-
-  const setListFilters = (next: TaskFilterType) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      params.delete("status"); params.delete("ftitle"); params.delete("priority"); params.delete("fstart"); params.delete("fend");
-      if (next.status) params.set("status", next.status);
-      if (next.title) params.set("ftitle", next.title);
-      if (next.priority) params.set("priority", next.priority);
-      if (next.start) params.set("fstart", next.start.toISOString());
-      if (next.end) params.set("fend", next.end.toISOString());
-      return params;
-    }, { replace: true });
-  };
-
-  const [listTasks, setListTasks] = useState<NewTask[]>([]);
-
-  // Load all tasks on mount
   useEffect(() => {
     if (!isAuthenticated) return;
     getAllTasks()
@@ -145,25 +50,28 @@ function Home() {
           }))
         )
       )
-      .catch(() => {});
+      .catch(() => setError("Could not load your task overview."));
   }, [isAuthenticated]);
 
-  // Reload list tasks when list panel opens or filters change
-  useEffect(() => {
-    if (rightPanel !== "list") return;
-    getTasks(listFilters).then((data) =>
-      setListTasks(
-        data.map((t) => ({
-          ...t,
-          start: new Date(t.start),
-          end: new Date(t.end),
-          status: t.status as TaskStatus,
-        }))
-      )
-    );
-  }, [rightPanel, listFilters]);
+  const loadAiSnapshot = useCallback(async () => {
+    if (!isAuthenticated || !SHOW_AI_SNAPSHOT) return;
 
-  // Derived values for overview
+    setIsSnapshotLoading(true);
+    try {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const snapshot = await getDashboardSnapshot(timeZone);
+      setAiSnapshot(snapshot);
+    } catch {
+      setError("Could not load your AI snapshot.");
+    } finally {
+      setIsSnapshotLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    loadAiSnapshot();
+  }, [loadAiSnapshot]);
+
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -184,6 +92,26 @@ function Home() {
     [tasks, today]
   );
 
+  const todayTasks = useMemo(
+    () =>
+      tasks
+        .filter((t) => new Date(t.start).toDateString() === new Date().toDateString())
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()),
+    [tasks]
+  );
+
+  const pendingTodayTasks = useMemo(
+    () =>
+      tasks
+        .filter(
+          (t) =>
+            new Date(t.start).toDateString() === new Date().toDateString() &&
+            t.status === TaskStatus.NotStarted
+        )
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()),
+    [tasks]
+  );
+
   const statCounts = useMemo(
     () =>
       STAT_CARDS.reduce((acc, { status }) => {
@@ -193,130 +121,21 @@ function Home() {
     [tasks]
   );
 
-  // Calendar events derived from tasks
-  const fcEvents = useMemo(
-    () =>
-      tasks.map((task) => {
-        const colors = STATUS_COLORS[task.status] ?? { bg: "#6b7280", border: "#4b5563" };
-        return {
-          id: task.id,
-          title: task.title,
-          start: task.start,
-          end: task.end,
-          backgroundColor: colors.bg,
-          borderColor: colors.border,
-          textColor: "#fff",
-        };
-      }),
-    [tasks]
-  );
-
+  const completedCount = statCounts[TaskStatus.Completed] ?? 0;
+  const inProgressCount = statCounts[TaskStatus.InProgress] ?? 0;
+  const notStartedCount = statCounts[TaskStatus.NotStarted] ?? 0;
+  const blockedCount = statCounts[TaskStatus.Blocked] ?? 0;
+  const completionRate = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+  const openCount = Math.max(0, tasks.length - completedCount);
+  const statusSegments = STAT_CARDS.map(({ status, label, color }) => {
+    const count = statCounts[status] ?? 0;
+    const width = tasks.length > 0 ? (count / tasks.length) * 100 : 0;
+    return { status, label, color, count, width };
+  });
   const selectedTask = useMemo(
-    () => tasks.find((e) => e.id === selectedTaskId) || null,
+    () => tasks.find((task) => task.id === selectedTaskId) || null,
     [tasks, selectedTaskId]
   );
-
-  // ── AI scheduling ─────────────────────────────────────────────────────────
-  const handleUserSubmit = async () => {
-    if (!userInput.trim()) return;
-    audioInputRef.current?.stop();
-    setIsScheduling(true);
-    setSchedulingError(null);
-    setSchedulingResults([]);
-
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    try {
-      const response = await postUserInput(userInput, controller.signal);
-      setSchedulingResults(response);
-      setTasks((prev) => [
-        ...prev,
-        ...response.map((task) => ({
-          ...task,
-          start: new Date(task.start),
-          end: new Date(task.end),
-          status: task.status as TaskStatus,
-        })),
-      ]);
-      setUserInput("");
-      setRightPanel("calendar");
-      setOverdueExpanded(false);
-      setUpcomingExpanded(false);
-    } catch (err) {
-      if ((err as { name?: string })?.name === 'CanceledError' || (err as { name?: string })?.name === 'AbortError') {
-        // User stopped — silently reset
-      } else {
-        setSchedulingError(err instanceof Error ? err.message : "Failed to generate schedule.");
-      }
-    } finally {
-      abortControllerRef.current = null;
-      setIsScheduling(false);
-    }
-  };
-
-  const handleStopScheduling = () => {
-    abortControllerRef.current?.abort();
-  };
-
-  const handleTranscriptChange = useCallback((transcript: string) => {
-    setUserInput(transcript);
-  }, []);
-
-  // ── Calendar handlers ─────────────────────────────────────────────────────
-  const handleEventClick = (info: { event: { id: string } }) => {
-    document.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-    setSelectedTaskId(info.event.id);
-    setIsModalOpen(true);
-  };
-
-  const handleDateSelect = (info: { start: Date; view: { type: string } }) => {
-    if (info.view.type === "dayGridMonth") {
-      calendarRef.current?.getApi().changeView("timeGridDay", info.start);
-    } else {
-      const date = moment(info.start).format("YYYY-MM-DD");
-      const time = moment(info.start).format("HH:mm");
-      const viewParam = info.view.type === "timeGridWeek" ? "week" : "day";
-      navigate(`/newtask?date=${date}&time=${time}&view=${viewParam}`);
-    }
-  };
-
-  const handleEventDrop = async (info: {
-    event: { id: string; start: Date | null; end: Date | null };
-    revert: () => void;
-  }) => {
-    const task = tasks.find((e) => e.id === info.event.id);
-    if (!task || !info.event.start) { info.revert(); return; }
-    const duration = task.end.getTime() - task.start.getTime();
-    const updated: NewTask = {
-      ...task,
-      start: info.event.start,
-      end: info.event.end ?? new Date(info.event.start.getTime() + duration),
-    };
-    try {
-      await updateTask(task.id!, updated);
-      setTasks((prev) => prev.map((e) => (e.id === task.id ? updated : e)));
-    } catch {
-      info.revert();
-      setCalendarError("Failed to move task.");
-    }
-  };
-
-  const handleEventResize = async (info: {
-    event: { id: string; start: Date | null; end: Date | null };
-    revert: () => void;
-  }) => {
-    const task = tasks.find((e) => e.id === info.event.id);
-    if (!task || !info.event.start || !info.event.end) { info.revert(); return; }
-    const updated: NewTask = { ...task, start: info.event.start, end: info.event.end };
-    try {
-      await updateTask(task.id!, updated);
-      setTasks((prev) => prev.map((e) => (e.id === task.id ? updated : e)));
-    } catch {
-      info.revert();
-      setCalendarError("Failed to resize task.");
-    }
-  };
 
   const handleUpdateTask = async (updatedTask: NewTask) => {
     if (!selectedTask?.id) return;
@@ -328,144 +147,125 @@ function Home() {
         end: new Date(apiResponse.end),
         status: apiResponse.status as TaskStatus,
       };
-      setTasks((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
-      setListTasks((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
+      setTasks((prev) => prev.map((task) => (task.id === saved.id ? saved : task)));
+      loadAiSnapshot();
       setIsModalOpen(false);
       setSelectedTaskId(null);
     } catch {
-      setCalendarError("Failed to update task.");
+      setError("Failed to update task.");
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     try {
       await deleteTask(taskId);
-      setTasks((prev) => prev.filter((e) => e.id !== taskId));
-      setListTasks((prev) => prev.filter((e) => e.id !== taskId));
+      setTasks((prev) => prev.filter((task) => task.id !== taskId));
+      loadAiSnapshot();
       setIsModalOpen(false);
       setSelectedTaskId(null);
     } catch {
-      setCalendarError("Failed to delete task.");
+      setError("Failed to delete task.");
     }
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedTaskId(null);
   };
 
   if (!isAuthenticated) {
     return <Landing />;
   }
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const firstName = user?.name?.split(" ")[0] ?? "there";
+  const snapshotBullets =
+    aiSnapshot?.bullets ?? ["Do first: analyze overdue work", "Then: check upcoming deadlines", "Watch: find schedule risk"];
 
   return (
-    <div className="tcv-root">
-      {/* ── Left Panel ── */}
-      <aside className="tcv-sidebar">
-        <div className="tcv-sidebar-header">
-          <span className="tcv-sidebar-title">{greeting}, {firstName}</span>
-        </div>
+    <div className="home-workspace">
+      <main className="home-main-stage">
+        <div className="home-overview">
+          {error && <div className="home-alert">{error}</div>}
 
-        <div className="tcv-input-section">
-          <label className="tcv-label">Describe your tasks</label>
-          <textarea
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            placeholder="e.g. Schedule a 2-hour meeting tomorrow at 10am and a code review Friday at 2pm"
-            className="tcv-textarea"
-          />
-        </div>
-
-        {isScheduling ? (
-          <button onClick={handleStopScheduling} className="tcv-btn-generate tcv-btn-stop">
-            Stop
-          </button>
-        ) : (
-          <button onClick={handleUserSubmit} disabled={!userInput.trim()} className="tcv-btn-generate">
-            Schedule with AI
-          </button>
-        )}
-
-        <AudioInput ref={audioInputRef} onTranscriptChange={handleTranscriptChange} />
-
-        {schedulingError && (
-          <div className="tcv-error">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            {schedulingError}
-          </div>
-        )}
-
-        {schedulingResults.length > 0 && (
-          <div className="tcv-scheduling-results">
-            <h4 className="tcv-scheduling-results-title">Scheduled</h4>
-            {schedulingResults.map((task, i) => (
-              <div key={task.id ?? i} className="tcv-scheduling-result-item">
-                <div className="tcv-scheduling-result-task-title">
-                  {task.id ? (
-                    <span
-                      className="tcv-scheduling-result-link"
-                      onClick={() => handleTaskClick(task as NewTask)}
-                      style={{ cursor: 'pointer' }}
-                    >{task.title}</span>
-                  ) : task.title}
-                </div>
-                <div className="tcv-scheduling-result-time">
-                  {moment(task.start).format("MMM D, h:mm a")} &ndash; {moment(task.end).format("h:mm a")}
-                </div>
-                {task.isAllocatedOutsideRequestedTime && (
-                  <div className="tcv-scheduling-result-note">
-                    <span className="tcv-scheduling-result-note-icon">⚠</span>
-                    {task.allocationNote}
-                  </div>
-                )}
+          {SHOW_AI_SNAPSHOT && (
+          <section className={`home-ai-snapshot home-ai-snapshot--${aiSnapshot?.tone ?? "active"}`}>
+            <div className="home-ai-hero-row">
+              <div className="home-ai-mark" aria-hidden="true">AI</div>
+              <div className="home-ai-copy">
+                <span className="home-kicker">
+                  AI Snapshot
+                  {aiSnapshot && !aiSnapshot.isAiGenerated && <em>Fallback</em>}
+                </span>
+                <h3>{isSnapshotLoading ? "Reading your task queue..." : aiSnapshot?.headline ?? "AI snapshot is preparing."}</h3>
+                <p>
+                  {isSnapshotLoading
+                    ? "Reviewing overdue, blocked, high-priority, and upcoming work."
+                    : aiSnapshot?.detail ?? "Your personalized dashboard briefing will appear here shortly."}
+                </p>
               </div>
-            ))}
-          </div>
-        )}
-      </aside>
-
-      {/* ── Right Panel ── */}
-      <main className="tcv-main">
-        {/* Tab navigation */}
-        <div className="home-tabs">
-          {(["overview", "calendar", "list", "productivity"] as RightPanel[]).map((panel) => (
-            <button
-              key={panel}
-              onClick={() => setRightPanel(panel)}
-              className={`home-tab${rightPanel === panel ? " home-tab--active" : ""}`}
-            >
-              {panel === "overview" ? "Overview" : panel === "calendar" ? "Calendar" : panel === "list" ? "Task List" : "Productivity"}
-            </button>
-          ))}
-        </div>
-
-        {/* Overview */}
-        {rightPanel === "overview" && (
-          <div className="home-overview">
-            <div className="home-stat-grid">
-              {STAT_CARDS.map(({ status, label, color, bg, border }) => (
-                <div key={status} className="home-stat-card" style={{ background: bg, borderColor: border }}>
-                  <span className="home-stat-count" style={{ color }}>{statCounts[status] ?? 0}</span>
-                  <span className="home-stat-label">{label}</span>
-                </div>
+            </div>
+            <ol className="home-ai-snapshot-list">
+              {snapshotBullets.map((item) => (
+                <li key={item}>
+                  {item.includes(":") ? (
+                    <>
+                      <strong>{item.split(":")[0]}</strong>
+                      <span>{item.slice(item.indexOf(":") + 1).trim()}</span>
+                    </>
+                  ) : (
+                    <span>{item}</span>
+                  )}
+                </li>
               ))}
+            </ol>
+          </section>
+          )}
+
+          <section className="home-command-strip">
+            <div className="home-completion-orbit">
+              <div
+                className="home-completion-ring"
+                style={{ "--completion-offset": `${100 - completionRate}` } as CSSProperties}
+              >
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <circle className="home-completion-track" cx="60" cy="60" r="48" pathLength="100" />
+                  <circle className="home-completion-progress" cx="60" cy="60" r="48" pathLength="100" />
+                </svg>
+                <span>{completionRate}%</span>
+              </div>
+              <div>
+                <span className="home-metric-label">Completion</span>
+                <strong>{completedCount}/{tasks.length || 0}</strong>
+                <p>{openCount} open task{openCount === 1 ? "" : "s"} remaining</p>
+              </div>
             </div>
 
-            <div className="home-section home-section--upcoming">
+            <div className="home-status-visual">
+              <div className="home-status-visual-header">
+                <span className="home-metric-label">Task Distribution</span>
+                <strong>{tasks.length}</strong>
+              </div>
+              <div className="home-status-beam" aria-label="Task status distribution">
+                {statusSegments.map(({ status, color, width }) => (
+                  <span
+                    key={status}
+                    style={{ width: `${Math.max(width, width > 0 ? 4 : 0)}%`, background: color }}
+                  />
+                ))}
+              </div>
+              <div className="home-status-legend">
+                {statusSegments.map(({ status, label, color, count }) => (
+                  <span key={status}>
+                    <i style={{ background: color }} />
+                    {label} <strong>{count}</strong>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <div className="home-overview-grid">
+            <section className="home-section home-section--upcoming">
               <button className="home-section-header" onClick={() => setUpcomingExpanded((v) => !v)}>
                 <span className="home-section-title">
                   Upcoming
-                  {upcomingTasks.length > 0 && (
-                    <span className="home-section-badge home-section-badge--blue">{upcomingTasks.length}</span>
-                  )}
+                  {upcomingTasks.length > 0 && <span className="home-section-badge home-section-badge--blue">{upcomingTasks.length}</span>}
                 </span>
-                <span className="home-section-chevron">{upcomingExpanded ? "▲" : "▼"}</span>
+                <span className="home-section-chevron">{upcomingExpanded ? "Open" : "Closed"}</span>
               </button>
               {upcomingExpanded && (
                 upcomingTasks.length === 0 ? (
@@ -476,17 +276,15 @@ function Home() {
                   </div>
                 )
               )}
-            </div>
+            </section>
 
-            <div className="home-section home-section--overdue">
+            <section className="home-section home-section--overdue">
               <button className="home-section-header" onClick={() => setOverdueExpanded((v) => !v)}>
                 <span className="home-section-title">
                   Overdue
-                  {overdueTasks.length > 0 && (
-                    <span className="home-section-badge home-section-badge--red">{overdueTasks.length}</span>
-                  )}
+                  {overdueTasks.length > 0 && <span className="home-section-badge home-section-badge--red">{overdueTasks.length}</span>}
                 </span>
-                <span className="home-section-chevron">{overdueExpanded ? "▲" : "▼"}</span>
+                <span className="home-section-chevron">{overdueExpanded ? "Open" : "Closed"}</span>
               </button>
               {overdueExpanded && (
                 overdueTasks.length === 0 ? (
@@ -497,81 +295,42 @@ function Home() {
                   </div>
                 )
               )}
-            </div>
+            </section>
           </div>
-        )}
+        </div>
+      </main>
 
-        {/* Calendar */}
-        {rightPanel === "calendar" && (
-          <div className="home-calendar-panel">
-            {calendarError && (
-              <div className="tcv-error" style={{ marginBottom: 8 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                {calendarError}
-              </div>
-            )}
-            <div className="tcv-legend">
-              {LEGEND.map(({ label, color }) => (
-                <div key={label} className="tcv-legend-item">
-                  <span className="tcv-legend-dot" style={{ background: color }} />
-                  <span>{label}</span>
-                </div>
+      <aside className="home-insight-rail">
+        <section className="home-focus-card">
+          <span className="home-kicker">Today</span>
+          <strong>{todayTasks.length}</strong>
+          <p>{todayTasks.length === 1 ? "task scheduled" : "tasks scheduled"}</p>
+        </section>
+
+        <section className="home-rail-section">
+          <h2>To Do Today</h2>
+          {pendingTodayTasks.length === 0 ? (
+            <p className="home-empty-msg">No pending tasks for today.</p>
+          ) : (
+            <div className="home-rail-list">
+              {pendingTodayTasks.slice(0, 5).map((task) => (
+                <button key={task.id} className="home-rail-task" onClick={() => handleTaskClick(task)}>
+                  <span>{moment(task.start).format("h:mm a")}</span>
+                  <strong>{task.title}</strong>
+                </button>
               ))}
             </div>
-            <div className="tcv-calendar-wrap">
-              <FullCalendar
-                ref={calendarRef}
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                initialView={calViewParam}
-                headerToolbar={{
-                  left: "prev,next today",
-                  center: "title",
-                  right: "dayGridMonth,timeGridWeek,timeGridDay",
-                }}
-                buttonText={{ today: "Today", month: "Month", week: "Week", day: "Day" }}
-                events={fcEvents}
-                editable
-                selectable
-                selectMirror
-                dayMaxEvents={3}
-                height="100%"
-                nowIndicator
-                allDaySlot={false}
-                eventDisplay="block"
-                slotMinTime="06:00:00"
-                slotMaxTime="23:00:00"
-                datesSet={handleCalViewChange}
-                eventClick={handleEventClick}
-                select={handleDateSelect}
-                eventDrop={handleEventDrop}
-                eventResize={handleEventResize}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Task List */}
-        {rightPanel === "list" && (
-          <div className="home-list-panel">
-            <TaskFilter value={listFilters} onChange={setListFilters} />
-            <TaskList tasks={listTasks} onTaskClick={handleTaskClick} />
-          </div>
-        )}
-
-        {/* Productivity */}
-        {rightPanel === "productivity" && (
-          <div className="home-productivity-panel">
-            <ProductivityPage />
-          </div>
-        )}
-      </main>
+          )}
+        </section>
+      </aside>
 
       {isModalOpen && selectedTask && (
         <TaskEditModal
           isOpen={isModalOpen}
-          onClose={handleCloseModal}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedTaskId(null);
+          }}
           task={selectedTask}
           onSave={handleUpdateTask}
           onDelete={handleDeleteTask}

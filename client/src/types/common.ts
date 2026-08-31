@@ -158,3 +158,11 @@ export interface SessionMessageDto {
   scheduledTasks?: ScheduledTaskResult[];
   queryResults?: QueryTaskResult[];
 }
+
+export interface DashboardSnapshot {
+  headline: string;
+  detail: string;
+  bullets: string[];
+  tone: 'urgent' | 'active' | 'calm';
+  isAiGenerated: boolean;
+}
