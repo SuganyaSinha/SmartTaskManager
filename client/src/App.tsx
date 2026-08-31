@@ -48,8 +48,8 @@ function App() {
             {/* Protected routes */}
             <Route path="/UserRoutine" element={<ProtectedUserRoutine />} />
             <Route path="/NewTask" element={<ProtectedNewTask />} />
-            <Route path="/Calendar" element={<ProtectedTaskScheduler />} />
-            <Route path="/CalendarNew" element={<ProtectedTaskCalendarView />} />
+            <Route path="/CalendarOld" element={<ProtectedTaskScheduler />} />
+            <Route path="/Calendar" element={<ProtectedTaskCalendarView />} />
             <Route path="/Task" element={<ProtectedTaskPage />} />
             <Route path="/Charts" element={<ProtectedChartsPage />} />
             <Route path="/Chat" element={<ProtectedChatScheduler />} />

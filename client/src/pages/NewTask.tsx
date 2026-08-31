@@ -131,7 +131,7 @@ function NewTask() {
 
   const handleCancel = () => {
     const view = searchParams.get('view') || 'month';
-    navigate(`/CalendarNew?view=${view}`);
+    navigate(`/Calendar?view=${view}`);
   };
 
   const validateTimes = (sd: string, st: string, ed: string, et: string) => {
@@ -187,7 +187,7 @@ function NewTask() {
       });
 
       setSuccess(true);
-      setTimeout(() => navigate(`/CalendarNew?view=day&date=${startDate}`), 1500);
+      setTimeout(() => navigate(`/Calendar?view=day&date=${startDate}`), 1500);
     } catch (err) {
       console.error('Failed to create task:', err);
       setError('Failed to create task. Please try again.');
