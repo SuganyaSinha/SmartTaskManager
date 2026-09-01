@@ -116,7 +116,7 @@ const TaskDetail: React.FC = () => {
     if (!id) return;
     try {
       await deleteTask(id);
-      navigate('/Task');
+      navigate('/Tasks');
     } catch {
       setError('Failed to delete. Please try again.');
       setShowDeleteConfirm(false);
@@ -138,7 +138,7 @@ const TaskDetail: React.FC = () => {
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 gap-4">
         <p className="text-red-600">{error ?? 'Task not found.'}</p>
         <button
-          onClick={() => navigate('/Task')}
+          onClick={() => navigate('/Tasks')}
           className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
         >
           Back to Tasks

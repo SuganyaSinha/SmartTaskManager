@@ -12,7 +12,7 @@ import TaskScheduler from './pages/TaskScheduler';
 import TaskCalendarView from './pages/TaskCalendarView';
 import NewTask from './pages/NewTask';
 import Callback from './pages/Callback';
-import TaskPage from './pages/TaskPage';
+import TasksPage from './pages/TasksPage';
 import { UserRoutine } from './pages/UserRoutine';
 import ChartsPage from './pages/ChartsPage';
 import ChatScheduler from './pages/ChatScheduler';
@@ -20,7 +20,7 @@ import ChatScheduler from './pages/ChatScheduler';
 const ProtectedNewTask = withAuthenticationRequired(NewTask);
 const ProtectedTaskScheduler = withAuthenticationRequired(TaskScheduler);
 const ProtectedTaskCalendarView = withAuthenticationRequired(TaskCalendarView);
-const ProtectedTaskPage = withAuthenticationRequired(TaskPage);
+const ProtectedTasksPage = withAuthenticationRequired(TasksPage);
 const ProtectedUserRoutine = withAuthenticationRequired(UserRoutine);
 const ProtectedChartsPage = withAuthenticationRequired(ChartsPage);
 const ProtectedChatScheduler = withAuthenticationRequired(ChatScheduler);
@@ -50,7 +50,7 @@ function App() {
             <Route path="/NewTask" element={<ProtectedNewTask />} />
             <Route path="/CalendarOld" element={<ProtectedTaskScheduler />} />
             <Route path="/Calendar" element={<ProtectedTaskCalendarView />} />
-            <Route path="/Task" element={<ProtectedTaskPage />} />
+            <Route path="/Tasks" element={<ProtectedTasksPage />} />
             <Route path="/Charts" element={<ProtectedChartsPage />} />
             <Route path="/Chat" element={<ProtectedChatScheduler />} />
 

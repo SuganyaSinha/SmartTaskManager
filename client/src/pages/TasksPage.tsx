@@ -6,7 +6,7 @@ import TaskEditModal from "../components/TaskEditModal";
 import { getTasks, updateTask, deleteTask } from "../services/taskService";
 import TaskList from "../components/TaskList";
 
-const TaskPage = () => {
+const TasksPage = () => {
   const [filters, setFilters] = useState<TaskFilterType>({});
   const [tasks, setTasks] = useState<NewTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<NewTask | null>(null);
@@ -68,4 +68,4 @@ const TaskPage = () => {
   );
 };
 
-export default TaskPage;
+export default TasksPage;

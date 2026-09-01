@@ -68,7 +68,7 @@ const NavBar = () => {
               <NavLink to="/" end className={({ isActive }) => `stm-nav-link${isActive ? ' stm-nav-active' : ''}`}>
                 Home
               </NavLink>
-              <NavLink to="/Task" className={({ isActive }) => `stm-nav-link${isActive ? ' stm-nav-active' : ''}`}>
+              <NavLink to="/Tasks" className={({ isActive }) => `stm-nav-link${isActive ? ' stm-nav-active' : ''}`}>
                 Tasks
               </NavLink>
               <NavLink to="/Calendar" className={({ isActive }) => `stm-nav-link${isActive ? ' stm-nav-active' : ''}`}>
@@ -190,7 +190,7 @@ const NavBar = () => {
           </div>
           <div className="stm-dd-divider" />
           <Link to="/" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Home</Link>
-          <Link to="/Task" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Tasks</Link>
+          <Link to="/Tasks" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Tasks</Link>
           <Link to="/Calendar" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Calendar</Link>
           <Link to="/Charts" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Charts</Link>
           <Link to="/Chat" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Chat</Link>
