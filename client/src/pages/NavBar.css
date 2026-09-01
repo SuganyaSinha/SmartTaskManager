@@ -89,6 +89,21 @@
   font-weight: 600;
 }
 
+.stm-nav-agent {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.stm-nav-agent:hover {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.stm-nav-agent.stm-nav-active {
+  background: #f5f3ff;
+  color: #7c3aed !important;
+}
+
 .stm-nav-new {
   background: #3b82f6;
   color: #ffffff !important;

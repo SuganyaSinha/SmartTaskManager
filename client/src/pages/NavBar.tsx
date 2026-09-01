@@ -77,8 +77,18 @@ const NavBar = () => {
               <NavLink to="/Charts" className={({ isActive }) => `stm-nav-link${isActive ? ' stm-nav-active' : ''}`}>
                 Charts
               </NavLink>
-              <NavLink to="/Chat" className={({ isActive }) => `stm-nav-link${isActive ? ' stm-nav-active' : ''}`}>
-                Chat
+              <NavLink to="/TaskAgent" className={({ isActive }) => `stm-nav-link stm-nav-agent${isActive ? ' stm-nav-active' : ''}`}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="url(#stm-sparkle)" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="stm-sparkle" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                      <stop offset="0" stopColor="#6366f1" />
+                      <stop offset="1" stopColor="#a855f7" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M12 2l1.6 4.6L18 8.2l-4.4 1.6L12 14.4l-1.6-4.6L6 8.2l4.4-1.6L12 2z" />
+                  <path d="M18.5 13l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z" />
+                </svg>
+                Task Agent
               </NavLink>
               <NavLink to="/NewTask" className="stm-nav-link stm-nav-new">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -193,7 +203,19 @@ const NavBar = () => {
           <Link to="/Tasks" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Tasks</Link>
           <Link to="/Calendar" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Calendar</Link>
           <Link to="/Charts" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Charts</Link>
-          <Link to="/Chat" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>Chat</Link>
+          <Link to="/TaskAgent" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="url(#stm-sparkle-m)" aria-hidden="true" style={{ marginRight: 8, verticalAlign: 'text-bottom' }}>
+              <defs>
+                <linearGradient id="stm-sparkle-m" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stopColor="#6366f1" />
+                  <stop offset="1" stopColor="#a855f7" />
+                </linearGradient>
+              </defs>
+              <path d="M12 2l1.6 4.6L18 8.2l-4.4 1.6L12 14.4l-1.6-4.6L6 8.2l4.4-1.6L12 2z" />
+              <path d="M18.5 13l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z" />
+            </svg>
+            Task Agent
+          </Link>
           <Link to="/NewTask" className="stm-mobile-link stm-mobile-link-new" onClick={() => setMobileMenuOpen(false)}>
             + New Task
           </Link>

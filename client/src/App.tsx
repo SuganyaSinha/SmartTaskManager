@@ -15,7 +15,7 @@ import Callback from './pages/Callback';
 import TasksPage from './pages/TasksPage';
 import { UserRoutine } from './pages/UserRoutine';
 import ChartsPage from './pages/ChartsPage';
-import ChatScheduler from './pages/ChatScheduler';
+import TaskAgent from './pages/TaskAgent';
 
 const ProtectedNewTask = withAuthenticationRequired(NewTask);
 const ProtectedTaskScheduler = withAuthenticationRequired(TaskScheduler);
@@ -23,7 +23,7 @@ const ProtectedTaskCalendarView = withAuthenticationRequired(TaskCalendarView);
 const ProtectedTasksPage = withAuthenticationRequired(TasksPage);
 const ProtectedUserRoutine = withAuthenticationRequired(UserRoutine);
 const ProtectedChartsPage = withAuthenticationRequired(ChartsPage);
-const ProtectedChatScheduler = withAuthenticationRequired(ChatScheduler);
+const ProtectedTaskAgent = withAuthenticationRequired(TaskAgent);
 
 function AuthTokenSetup() {
   const { getToken } = useApiToken();
@@ -52,7 +52,7 @@ function App() {
             <Route path="/Calendar" element={<ProtectedTaskCalendarView />} />
             <Route path="/Tasks" element={<ProtectedTasksPage />} />
             <Route path="/Charts" element={<ProtectedChartsPage />} />
-            <Route path="/Chat" element={<ProtectedChatScheduler />} />
+            <Route path="/TaskAgent" element={<ProtectedTaskAgent />} />
 
             {/* Auth0 callback */}
             <Route path="/callback" element={<Callback />} />

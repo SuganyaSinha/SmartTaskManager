@@ -5,7 +5,7 @@ import { sendChatMessage, getChatSessions, getSessionMessages, deleteChatSession
 import { createTask, getTaskById, updateTask, deleteTask } from '../services/taskService';
 import AudioInput, { type AudioInputHandle } from './AudioInput';
 import TaskEditModal from '../components/TaskEditModal';
-import './ChatScheduler.css';
+import './TaskAgent.css';
 
 // Render common LLM markdown patterns without an external library.
 // Handles: **bold**, `code`, bullet lists (- or *), numbered lists, blank-line paragraphs.
@@ -90,7 +90,7 @@ function extractFriendlyParts(content: string): { intro: string; outro: string }
   };
 }
 
-const ChatScheduler = () => {
+const TaskAgent = () => {
   // ── Modal state ────────────────────────────────────────────────────────────
   const [fetchedTask, setFetchedTask] = useState<NewTask | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -570,4 +570,4 @@ const ChatScheduler = () => {
   );
 };
 
-export default ChatScheduler;
+export default TaskAgent;
