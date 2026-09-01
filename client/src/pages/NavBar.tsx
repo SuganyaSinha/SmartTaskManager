@@ -90,12 +90,6 @@ const NavBar = () => {
                 </svg>
                 Task Agent
               </NavLink>
-              <NavLink to="/NewTask" className="stm-nav-link stm-nav-new">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                New Task
-              </NavLink>
             </nav>
           )}
 
@@ -216,10 +210,7 @@ const NavBar = () => {
             </svg>
             Task Agent
           </Link>
-          <Link to="/NewTask" className="stm-mobile-link stm-mobile-link-new" onClick={() => setMobileMenuOpen(false)}>
-            + New Task
-          </Link>
-          <div className="stm-dd-divider" />
+<div className="stm-dd-divider" />
           <Link to="/UserRoutine" className="stm-mobile-link" onClick={() => setMobileMenuOpen(false)}>
             My Routine Profile
           </Link>
