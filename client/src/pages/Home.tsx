@@ -122,9 +122,6 @@ function Home() {
   );
 
   const completedCount = statCounts[TaskStatus.Completed] ?? 0;
-  const inProgressCount = statCounts[TaskStatus.InProgress] ?? 0;
-  const notStartedCount = statCounts[TaskStatus.NotStarted] ?? 0;
-  const blockedCount = statCounts[TaskStatus.Blocked] ?? 0;
   const completionRate = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
   const openCount = Math.max(0, tasks.length - completedCount);
   const statusSegments = STAT_CARDS.map(({ status, label, color }) => {
@@ -172,16 +169,13 @@ function Home() {
     return <Landing />;
   }
 
-  const snapshotBullets =
-    aiSnapshot?.bullets ?? ["Do first: analyze overdue work", "Then: check upcoming deadlines", "Watch: find schedule risk"];
-
   return (
     <div className="home-workspace">
       <main className="home-main-stage">
         <div className="home-overview">
           {error && <div className="home-alert">{error}</div>}
 
-          {SHOW_AI_SNAPSHOT && (
+          {SHOW_AI_SNAPSHOT && (isSnapshotLoading || aiSnapshot !== null) && (
           <section className={`home-ai-snapshot home-ai-snapshot--${aiSnapshot?.tone ?? "active"}`}>
             <div className="home-ai-hero-row">
               <div className="home-ai-mark" aria-hidden="true">AI</div>
@@ -190,28 +184,30 @@ function Home() {
                   AI Snapshot
                   {aiSnapshot && !aiSnapshot.isAiGenerated && <em>Fallback</em>}
                 </span>
-                <h3>{isSnapshotLoading ? "Reading your task queue..." : aiSnapshot?.headline ?? "AI snapshot is preparing."}</h3>
+                <h3>{isSnapshotLoading ? "Reading your task queue..." : aiSnapshot?.headline}</h3>
                 <p>
                   {isSnapshotLoading
                     ? "Reviewing overdue, blocked, high-priority, and upcoming work."
-                    : aiSnapshot?.detail ?? "Your personalized dashboard briefing will appear here shortly."}
+                    : aiSnapshot?.detail}
                 </p>
               </div>
             </div>
-            <ol className="home-ai-snapshot-list">
-              {snapshotBullets.map((item) => (
-                <li key={item}>
-                  {item.includes(":") ? (
-                    <>
-                      <strong>{item.split(":")[0]}</strong>
-                      <span>{item.slice(item.indexOf(":") + 1).trim()}</span>
-                    </>
-                  ) : (
-                    <span>{item}</span>
-                  )}
-                </li>
-              ))}
-            </ol>
+            {aiSnapshot && (
+              <ol className="home-ai-snapshot-list">
+                {aiSnapshot.bullets.map((item) => (
+                  <li key={item}>
+                    {item.includes(":") ? (
+                      <>
+                        <strong>{item.split(":")[0]}</strong>
+                        <span>{item.slice(item.indexOf(":") + 1).trim()}</span>
+                      </>
+                    ) : (
+                      <span>{item}</span>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
           </section>
           )}
 
@@ -265,7 +261,7 @@ function Home() {
                   Upcoming
                   {upcomingTasks.length > 0 && <span className="home-section-badge home-section-badge--blue">{upcomingTasks.length}</span>}
                 </span>
-                <span className="home-section-chevron">{upcomingExpanded ? "Open" : "Closed"}</span>
+                <span className="home-section-chevron">{upcomingExpanded ? "▲" : "▼"}</span>
               </button>
               {upcomingExpanded && (
                 upcomingTasks.length === 0 ? (
@@ -284,7 +280,7 @@ function Home() {
                   Overdue
                   {overdueTasks.length > 0 && <span className="home-section-badge home-section-badge--red">{overdueTasks.length}</span>}
                 </span>
-                <span className="home-section-chevron">{overdueExpanded ? "Open" : "Closed"}</span>
+                <span className="home-section-chevron">{overdueExpanded ? "▲" : "▼"}</span>
               </button>
               {overdueExpanded && (
                 overdueTasks.length === 0 ? (

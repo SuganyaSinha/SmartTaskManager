@@ -74,12 +74,10 @@ export const updateTask = async (taskId: string, updates: Partial<NewTask>) => {
             headers: { 'Content-Type': 'application/json' },
         });
 
-        console.log("updateTask API response:", response);
         return response.data;
     }
     catch(error)
     {
-        // tbd log the error
         console.error("updateTask API call failed:", error);
         throw error;
     }

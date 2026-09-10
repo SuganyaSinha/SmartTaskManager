@@ -1,3 +1,5 @@
+/* tbd: This file is not being used. It can be removed */
+
 /* Hide time display in day view - show only title */
 .rbc-day-slot .rbc-time-slot ~ .rbc-event-label {
   display: none;
