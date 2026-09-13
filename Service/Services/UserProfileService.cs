@@ -1,3 +1,4 @@
+// TODO: this service is no longer used and can be deleted.
 using MongoDB.Driver;
 using SmartTaskManager.Models;
 using TaskManagerApi.Data;

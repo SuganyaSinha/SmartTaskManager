@@ -13,7 +13,6 @@ export const getAllTasks = async () : Promise<NewTask[]>=> {
     }
     catch(error)
     {
-        // tbd log the error
         console.error("getAllTasks API call failed:", error);
         throw error;
     }
@@ -51,7 +50,6 @@ export const createTask = async (task : NewTask) => {
     }
     catch(error)
     {
-        // tbd log the error
         console.error("createTask API call failed:", error);
         throw error;
     }
@@ -97,7 +95,6 @@ export const getTaskById = async (taskId: string): Promise<NewTask> => {
 };
 
 // Delete task for the user
-// tbd not tested yet
 export const deleteTask = async (taskId: string) => {
 
     try{
@@ -109,7 +106,6 @@ export const deleteTask = async (taskId: string) => {
     }
     catch(error)
     {
-        // tbd log the error
         console.error("deleteTask API call failed:", error);
         throw error;
     }

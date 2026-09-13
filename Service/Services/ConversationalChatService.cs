@@ -10,8 +10,7 @@ using SmartTaskManager.Services;
 
 /// <summary>
 /// Manages bidirectional chat sessions for task management.
-/// Uses gpt-4o-mini for all chat operations (16x cheaper than gpt-4o).
-/// Routes task creation requests to SmartSchedulerService (keeps gpt-4o for complex scheduling).
+/// Routes task creation requests to TaskSchedulingService.
 ///
 /// Session storage: hybrid — hot in-memory cache (ConcurrentDictionary) + MongoDB persistence.
 /// Load path: memory hit → DB load → new session.
@@ -30,20 +29,20 @@ public class ConversationalChatService
     private const int MaxHistoryMessages = 12; // ~6 turns
 
     private readonly Kernel _chatKernel;
-    private readonly SmartSchedulerService _smartSchedulerService;
+    private readonly TaskSchedulingService _taskSchedulingService;
     private readonly ITaskRepository _taskRepository;
     private readonly IChatSessionRepository _chatSessionRepository;
     private readonly ILogger<ConversationalChatService> _logger;
 
     public ConversationalChatService(
         [FromKeyedServices("grok-chat")] Kernel chatKernel,
-        SmartSchedulerService smartSchedulerService,
+        TaskSchedulingService taskSchedulingService,
         ITaskRepository taskRepository,
         IChatSessionRepository chatSessionRepository,
         ILogger<ConversationalChatService> logger)
     {
         _chatKernel = chatKernel;
-        _smartSchedulerService = smartSchedulerService;
+        _taskSchedulingService = taskSchedulingService;
         _taskRepository = taskRepository;
         _chatSessionRepository = chatSessionRepository;
         _logger = logger;
@@ -55,7 +54,7 @@ public class ConversationalChatService
             return ErrorResponse(request.SessionId, "Invalid date format.");
 
         try { TimeZoneInfo.FindSystemTimeZoneById(request.TimeZone); }
-        catch { return ErrorResponse(request.SessionId, "Invalid timezone."); }
+        catch (TimeZoneNotFoundException) { return ErrorResponse(request.SessionId, "Invalid timezone."); }
 
         CleanupExpiredSessions();
 
@@ -131,7 +130,7 @@ public class ConversationalChatService
                     TimeZone = request.TimeZone
                 };
 
-                var scheduledTasks = await _smartSchedulerService.ScheduleTasksAsync(openAiRequest, userId);
+                var scheduledTasks = await _taskSchedulingService.ScheduleTasksAsync(openAiRequest, userId);
                 var taskWord = scheduledTasks.Count == 1 ? "task" : "tasks";
                 var message = $"I've scheduled {scheduledTasks.Count} {taskWord} for you.";
 
@@ -156,7 +155,7 @@ public class ConversationalChatService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "SmartScheduler failed for session {SessionId}", request.SessionId);
+                _logger.LogError(ex, "Task scheduling failed for session {SessionId}", request.SessionId);
                 return ErrorResponse(request.SessionId, "I couldn't schedule the tasks. Please try rephrasing.");
             }
         }

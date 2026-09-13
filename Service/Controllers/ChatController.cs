@@ -66,28 +66,44 @@ public class ChatController : BaseController
     [HttpGet("sessions")]
     public async Task<IActionResult> GetSessions()
     {
-        var entities = await _chatSessionRepository.GetByUserIdAsync(UserId);
-
-        var summaries = entities.Select(e => new ChatSessionSummary
+        try
         {
-            SessionId = e.SessionId,
-            Title = string.IsNullOrWhiteSpace(e.Title) ? "New Chat" : e.Title,
-            LastActivity = e.LastActivity,
-            MessageCount = e.Messages.Count(m => m.Role != "system")
-        }).ToList();
+            var entities = await _chatSessionRepository.GetByUserIdAsync(UserId);
 
-        return Ok(summaries);
+            var summaries = entities.Select(e => new ChatSessionSummary
+            {
+                SessionId = e.SessionId,
+                Title = string.IsNullOrWhiteSpace(e.Title) ? "New Chat" : e.Title,
+                LastActivity = e.LastActivity,
+                MessageCount = e.Messages.Count(m => m.Role != "system")
+            }).ToList();
+
+            return Ok(summaries);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve sessions for user {UserId}", UserId);
+            return StatusCode(500, "Failed to retrieve sessions.");
+        }
     }
 
     [HttpDelete("sessions/{sessionId}")]
     public async Task<IActionResult> DeleteSession(string sessionId)
     {
-        var entity = await _chatSessionRepository.GetByIdAsync(sessionId);
-        if (entity == null) return NotFound();
-        if (entity.UserId != UserId) return Forbid();
+        try
+        {
+            var entity = await _chatSessionRepository.GetByIdAsync(sessionId);
+            if (entity == null) return NotFound();
+            if (entity.UserId != UserId) return Forbid();
 
-        await _chatSessionRepository.DeleteAsync(sessionId, UserId);
-        return NoContent();
+            await _chatSessionRepository.DeleteAsync(sessionId, UserId);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete session {SessionId} for user {UserId}", sessionId, UserId);
+            return StatusCode(500, "Failed to delete session.");
+        }
     }
 
     [HttpGet("sessions/{sessionId}/messages")]

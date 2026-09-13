@@ -109,7 +109,7 @@ builder.Services.AddKeyedSingleton<Kernel>("grok-chat", (sp, _) =>
     return kernelBuilder.Build();
 });
 
-// Grok scheduler kernel — reasoning model for SmartSchedulerService intent extraction
+// Grok scheduler kernel — reasoning model for TaskSchedulingService intent extraction
 builder.Services.AddKeyedSingleton<Kernel>("grok-scheduler", (sp, _) =>
 {
     var apiKey = builder.Configuration["Grok:ApiKey"]!;
@@ -141,8 +141,8 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IPromptService, PromptService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IUserRoutineService, UserRoutineService>();
-builder.Services.AddScoped<AIPlannerService>();
-builder.Services.AddScoped<SmartSchedulerService>();
+builder.Services.AddScoped<LLMPlanningService>();
+builder.Services.AddScoped<TaskSchedulingService>();
 builder.Services.AddScoped<ConversationalChatService>();
 builder.Services.AddScoped<DashboardSnapshotService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();

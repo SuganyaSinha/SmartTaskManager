@@ -1,3 +1,4 @@
+// TODO: this controller is no longer used and can be deleted.
 using Microsoft.AspNetCore.Mvc;
 using SmartTaskManager.Interfaces;
 using Microsoft.AspNetCore.Authorization;

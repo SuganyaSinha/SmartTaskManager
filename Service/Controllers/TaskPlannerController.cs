@@ -9,17 +9,17 @@ using SmartTaskManager.Interfaces;
 public class TaskPlannerController : BaseController
 {
     private readonly IPromptService _promptService;
-    private readonly AIPlannerService _aiPlannerService;
-    private readonly SmartSchedulerService _smartSchedulerService;
+    private readonly LLMPlanningService _llmPlanningService;
+    private readonly TaskSchedulingService _taskSchedulingService;
 
     public TaskPlannerController(
         IPromptService promptService,
-        AIPlannerService aiPlannerService,
-        SmartSchedulerService smartSchedulerService)
+        LLMPlanningService llmPlanningService,
+        TaskSchedulingService taskSchedulingService)
     {
         _promptService = promptService;
-        _aiPlannerService = aiPlannerService;
-        _smartSchedulerService = smartSchedulerService;
+        _llmPlanningService = llmPlanningService;
+        _taskSchedulingService = taskSchedulingService;
     }
 
     [HttpPost("generate")]
@@ -31,7 +31,7 @@ public class TaskPlannerController : BaseController
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var response = await _aiPlannerService.GenerateTaskAsync(request, UserId);
+        var response = await _llmPlanningService.GenerateTaskAsync(request, UserId);
 
         var prompt = new Prompt { UserId = UserId, Text = request.UserInput, Response = response };
         await _promptService.CreatePromptAsync(prompt);
@@ -57,7 +57,7 @@ public class TaskPlannerController : BaseController
 
         try
         {
-            var scheduledTasks = await _smartSchedulerService.ScheduleTasksAsync(request, UserId);
+            var scheduledTasks = await _taskSchedulingService.ScheduleTasksAsync(request, UserId);
             var response = System.Text.Json.JsonSerializer.Serialize(scheduledTasks);
             return Ok(new { response });
         }

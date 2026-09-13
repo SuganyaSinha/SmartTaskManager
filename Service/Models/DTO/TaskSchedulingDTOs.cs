@@ -23,7 +23,7 @@ namespace SmartTaskManager.Models.DTO
     /// <summary>
     /// Returned to the client after server-side scheduling.
     /// Times are in the user's local timezone (no Z suffix), matching the
-    /// format that AIPlannerService already produces so the client can use either endpoint.
+    /// format that LLMPlanningService already produces so the client can use either endpoint.
     /// </summary>
     public class ScheduledTaskResult
     {

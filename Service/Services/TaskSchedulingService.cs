@@ -20,9 +20,9 @@ using SmartTaskManager.Repositary;
 ///   - Wakeup time is a hard lower boundary; tasks are never placed before it.
 ///   - If the user's requested time/date cannot be honoured, AllocationNote explains why.
 ///
-/// The existing AIPlannerService is not modified.
+/// The existing LLMPlanningService is not modified.
 /// </summary>
-public class SmartSchedulerService
+public class TaskSchedulingService
 {
     // ─── Constants ───────────────────────────────────────────────────────────
     private const int MaxDailyMinutes    = 480;  // 8 hours
@@ -49,13 +49,13 @@ public class SmartSchedulerService
     private readonly Kernel _grokKernel;
     private readonly ITaskRepository _taskRepository;
     private readonly IUserRoutineRepositary _userRoutineRepository;
-    private readonly ILogger<SmartSchedulerService> _logger;
+    private readonly ILogger<TaskSchedulingService> _logger;
 
-    public SmartSchedulerService(
+    public TaskSchedulingService(
         [FromKeyedServices("grok-scheduler")] Kernel grokKernel,
         ITaskRepository taskRepository,
         IUserRoutineRepositary userRoutineRepository,
-        ILogger<SmartSchedulerService> logger)
+        ILogger<TaskSchedulingService> logger)
     {
         _grokKernel            = grokKernel           ?? throw new ArgumentNullException(nameof(grokKernel));
         _taskRepository        = taskRepository       ?? throw new ArgumentNullException(nameof(taskRepository));

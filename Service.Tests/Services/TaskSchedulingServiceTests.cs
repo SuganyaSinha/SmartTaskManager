@@ -12,7 +12,7 @@ using Xunit;
 namespace Service.Tests.Services;
 
 /// <summary>
-/// Unit tests for SmartSchedulerService.
+/// Unit tests for TaskSchedulingService.
 ///
 /// Strategy:
 ///   - IChatCompletionService is mocked to return a predetermined ParsedTaskRequest JSON,
@@ -24,7 +24,7 @@ namespace Service.Tests.Services;
 /// Test date: 2026-03-06 (Friday), timezone UTC.
 /// Routine:   wakeup 07:00 | work 09:00-17:00 | sleep 23:00
 /// </summary>
-public class SmartSchedulerServiceTests
+public class TaskSchedulingServiceTests
 {
     // ─── Fixed test anchors ───────────────────────────────────────────────
     private const string CurrentDate = "2026-03-06T09:00";  // Friday
@@ -40,9 +40,9 @@ public class SmartSchedulerServiceTests
     private readonly Mock<IChatCompletionService> _mockChat;
     private readonly Mock<ITaskRepository>        _mockTaskRepo;
     private readonly Mock<IUserRoutineRepositary>  _mockRoutineRepo;
-    private readonly SmartSchedulerService         _sut;   // system under test
+    private readonly TaskSchedulingService         _sut;   // system under test
 
-    public SmartSchedulerServiceTests()
+    public TaskSchedulingServiceTests()
     {
         // 1. Chat service mock — concrete implementation returned via GetChatMessageContentsAsync
         //    (GetChatMessageContentAsync is an extension that delegates to the plural method)
@@ -67,9 +67,9 @@ public class SmartSchedulerServiceTests
             .ReturnsAsync(BuildDefaultRoutine());
 
         // 3. Logger (no-op)
-        var logger = new Mock<ILogger<SmartSchedulerService>>().Object;
+        var logger = new Mock<ILogger<TaskSchedulingService>>().Object;
 
-        _sut = new SmartSchedulerService(kernel, _mockTaskRepo.Object, _mockRoutineRepo.Object, logger);
+        _sut = new TaskSchedulingService(kernel, _mockTaskRepo.Object, _mockRoutineRepo.Object, logger);
     }
 
     // ─────────────────────────────────────────────────────────────────────

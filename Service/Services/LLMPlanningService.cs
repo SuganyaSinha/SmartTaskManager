@@ -6,17 +6,17 @@ using SmartTaskManager.Models.DTO;
 using SmartTaskManager.Repositary;
 
 
-public class AIPlannerService
+public class LLMPlanningService
 {
     private readonly Kernel _kernel;
     private readonly ITaskRepository _taskRepositary;
     private readonly IUserRoutineRepositary _userRoutineRepositary;
-    private readonly ILogger<AIPlannerService> _logger;
+    private readonly ILogger<LLMPlanningService> _logger;
 
-    public AIPlannerService(Kernel kernel,
+    public LLMPlanningService(Kernel kernel,
                             ITaskRepository taskRepositary,
                             IUserRoutineRepositary userRoutineRepositary,
-                            ILogger<AIPlannerService> logger)
+                            ILogger<LLMPlanningService> logger)
     {
         _kernel = kernel;
         _taskRepositary = taskRepositary;
@@ -214,11 +214,9 @@ Now schedule the tasks from the user's message using the rules above and output 
         // Run both queries in parallel
         var notStartedTask = _taskRepositary.GetTasksAsync(userId, notStartedFilter);
         var inProgressTask = _taskRepositary.GetTasksAsync(userId, inProgressFilter);
-        await Task.WhenAll(notStartedTask, inProgressTask);
-
-        var tasks = notStartedTask.Result
-            .Concat(inProgressTask.Result)
-            .ToList();
+        var results = await Task.WhenAll(notStartedTask, inProgressTask);
+        
+        var tasks = results[0].Concat(results[1]).ToList();
 
         TimeZoneInfo userLocalTimeZone;
         try

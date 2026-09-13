@@ -25,7 +25,17 @@ namespace SmartTaskManager.Services
 
         public async Task<DashboardSnapshot> GenerateSnapshotAsync(string userId, string? timeZone)
         {
-            var tasks = await _taskService.GetTasksAsync(userId, new TaskFilterRequest());
+            List<TaskItem> tasks;
+            try
+            {
+                tasks = await _taskService.GetTasksAsync(userId, new TaskFilterRequest());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load tasks for dashboard snapshot for user {UserId}", userId);
+                return BuildFallbackSnapshot([], 0, [], []);
+            }
+
             var nowUtc = DateTime.UtcNow;
             var userNow = ConvertUtcToUserTime(nowUtc, timeZone);
             var today = userNow.Date;
@@ -172,32 +182,6 @@ namespace SmartTaskManager.Services
             snapshot.Tone = snapshot.Tone is "urgent" or "active" or "calm" ? snapshot.Tone : "calm";
             snapshot.IsAiGenerated = true;
             return snapshot;
-        }
-
-        private static DashboardSnapshot BuildFallbackSnapshot(
-            List<TaskItem> tasks,
-            int openCount,
-            int overdueCount,
-            int upcomingCount)
-        {
-            var tone = overdueCount > 0 ? "urgent" : upcomingCount > 0 ? "active" : "calm";
-            return new DashboardSnapshot
-            {
-                Headline = overdueCount > 0
-                    ? $"{overdueCount} overdue task{(overdueCount == 1 ? " needs" : "s need")} attention."
-                    : upcomingCount > 0
-                        ? "Your upcoming task queue is ready."
-                        : "No immediate task pressure.",
-                Detail = "AI snapshot is temporarily unavailable, so this fallback is based on your current task counts.",
-                Bullets =
-                [
-                    $"{openCount} open task{(openCount == 1 ? "" : "s")}",
-                    $"{upcomingCount} upcoming",
-                    $"{tasks.Count(t => t.Status == Models.DTO.TaskStatus.Completed)} completed"
-                ],
-                Tone = tone,
-                IsAiGenerated = false
-            };
         }
 
         private static DashboardSnapshot BuildFallbackSnapshot(

@@ -1,3 +1,4 @@
+// TODO: this service is no longer used and can be deleted.
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;

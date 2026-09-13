@@ -1,3 +1,4 @@
+// TODO: this repository is no longer used and can be deleted.
 using MongoDB.Driver;
 using SmartTaskManager.Data;
 using SmartTaskManager.Models;
