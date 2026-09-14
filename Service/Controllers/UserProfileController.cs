@@ -1,6 +1,6 @@
 // TODO: this controller is no longer used and can be deleted.
 using Microsoft.AspNetCore.Mvc;
-using SmartTaskManager.Interfaces;
+using SmartTaskManager.Services;
 using Microsoft.AspNetCore.Authorization;
 
 [ApiController]
@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Authorization;
 [Authorize]
 public class UserProfileController : BaseController
 {
-    private readonly IUserProfileService _userProfileService;
+    private readonly UserProfileService _userProfileService;
 
-    public UserProfileController(IUserProfileService userProfileService)
+    public UserProfileController(UserProfileService userProfileService)
     {
         _userProfileService = userProfileService;
     }

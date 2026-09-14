@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartTaskManager.Models;
-using SmartTaskManager.Interfaces;
+using SmartTaskManager.Services;
 
 [ApiController]
 [Route("api/task-planner")]
 [Authorize]
 public class TaskPlannerController : BaseController
 {
-    private readonly IPromptService _promptService;
+    private readonly PromptService _promptService;
     private readonly LLMPlanningService _llmPlanningService;
     private readonly TaskSchedulingService _taskSchedulingService;
 
     public TaskPlannerController(
-        IPromptService promptService,
+        PromptService promptService,
         LLMPlanningService llmPlanningService,
         TaskSchedulingService taskSchedulingService)
     {

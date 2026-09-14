@@ -2,12 +2,11 @@ using MongoDB.Driver;
 using SmartTaskManager.Models;
 using TaskManagerApi.Data;
 using Microsoft.Extensions.Options;
-using SmartTaskManager.Interfaces;
 using SmartTaskManager.Repositary;
 
 namespace SmartTaskManager.Services
 {
-    public class PromptService : IPromptService
+    public class PromptService
     {
         private readonly IPromptRepositary _promptRepositary;
 

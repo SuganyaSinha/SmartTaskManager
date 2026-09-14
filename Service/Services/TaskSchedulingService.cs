@@ -7,20 +7,11 @@ using SmartTaskManager.Models.DTO;
 using SmartTaskManager.Repositary;
 
 /// <summary>
-/// Server-side task scheduling service.
 ///
 /// Two-phase pipeline:
-///   Phase 1 - Intent extraction (OpenAI only parses user language into ParsedTaskRequest)
+///   Phase 1 - Intent extraction
 ///   Phase 2 - Deterministic C# scheduling (conflict detection, slot-finding, recurrence)
 ///
-/// Key behaviours:
-///   - Work tasks: scheduled within work hours; productivity hours (if set) are tried first.
-///   - Personal tasks: prefer slots outside work hours (before/after work); fall back to
-///     full wakeup-to-sleep window when no outside-work slot is available.
-///   - Wakeup time is a hard lower boundary; tasks are never placed before it.
-///   - If the user's requested time/date cannot be honoured, AllocationNote explains why.
-///
-/// The existing LLMPlanningService is not modified.
 /// </summary>
 public class TaskSchedulingService
 {
@@ -63,10 +54,6 @@ public class TaskSchedulingService
         _logger                = logger               ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // PUBLIC ENTRY POINT
-    // ═════════════════════════════════════════════════════════════════════════
-
     public async Task<List<ScheduledTaskResult>> ScheduleTasksAsync(
         OpenAiRequestBody input,
         string userId)
@@ -88,18 +75,18 @@ public class TaskSchedulingService
                     $"Invalid CurrentDate format: '{input.CurrentDate}'. Expected yyyy-MM-ddTHH:mm");
             currentLocalTime = DateTime.SpecifyKind(currentLocalTime, DateTimeKind.Unspecified);
 
-            // ── Phase 1: Parse intent via OpenAI ─────────────────────────────
+            // ── Step 1: Parse intent ─────────────────────────────
             List<ParsedTaskRequest> parsedTasks =
                 await ExtractIntentAsync(input.UserInput, input.CurrentDate);
 
             if (parsedTasks == null || parsedTasks.Count == 0)
                 return new List<ScheduledTaskResult>();
 
-            // ── Phase 2: Load existing schedule and user routine ──────────────
+            // ── Step 2: Load existing schedule and user routine ──────────────
             var (allBlocks, usedMinutesPerDay) = await LoadExistingBlocksAsync(userId, tz);
             RoutineProfile? routine = await _userRoutineRepository.GetUserRoutineAsync(userId);
 
-            // ── Phase 3: Schedule deterministically ──────────────────────────
+            // ── Step 3: Schedule deterministically ──────────────────────────
             // High-priority tasks get first pick of available slots.
             var prioritized = parsedTasks.OrderBy(PriorityOrder).ToList();
             var results     = new List<ScheduledTaskResult>();
@@ -131,10 +118,6 @@ public class TaskSchedulingService
             throw;
         }
     }
-
-    // ═════════════════════════════════════════════════════════════════════════
-    // PHASE 1 — INTENT EXTRACTION
-    // ═════════════════════════════════════════════════════════════════════════
 
     private async Task<List<ParsedTaskRequest>> ExtractIntentAsync(
         string userInput, string currentDate)
@@ -194,10 +177,6 @@ public class TaskSchedulingService
             "- Return ONLY a raw JSON array. No markdown, no explanations.";
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // PHASE 2 — LOAD EXISTING SCHEDULE
-    // ═════════════════════════════════════════════════════════════════════════
-
     private async Task<(List<TimeBlock> blocks, Dictionary<DateTime, int> usedMinutes)>
         LoadExistingBlocksAsync(string userId, TimeZoneInfo tz)
     {
@@ -242,10 +221,6 @@ public class TaskSchedulingService
 
         return (blocks, usedMinutes);
     }
-
-    // ═════════════════════════════════════════════════════════════════════════
-    // PHASE 3a — SCHEDULE A SINGLE (NON-RECURRING) TASK
-    // ═════════════════════════════════════════════════════════════════════════
 
     private ScheduledTaskResult? ScheduleSingle(
         ParsedTaskRequest parsed,
@@ -308,7 +283,6 @@ public class TaskSchedulingService
         {
             // User specified a time (and possibly a date) — try it directly.
             // For personal tasks this may be during work hours, which is fine.
-            // Use the personal window for boundary checks so we don't reject work-hour times.
             (TimeSpan winStart, TimeSpan winEnd) =
                 GetAllowedWindowForTask(routine, preferredStart.Value.Date, taskCategory);
             DateTime dayWinStart = preferredStart.Value.Date + winStart;
@@ -382,11 +356,7 @@ public class TaskSchedulingService
         return result;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // PHASE 3b — SCHEDULE RECURRING TASKS
-    // ═════════════════════════════════════════════════════════════════════════
-
-    private List<ScheduledTaskResult> ScheduleRecurring(
+      private List<ScheduledTaskResult> ScheduleRecurring(
         ParsedTaskRequest parsed,
         int durationMinutes,
         DateTime currentLocalTime,
@@ -506,17 +476,6 @@ public class TaskSchedulingService
         return results;
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    // SLOT-FINDING — MAIN ENTRY (FindBestSlot)
-    // ═════════════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Top-level slot finder that applies category-aware preferences before
-    /// falling back to the general-purpose FindNextSlot.
-    ///
-    /// Work tasks:    try productivity hours → fall back to work window
-    /// Personal tasks: try outside work hours → fall back to full personal window
-    /// </summary>
     private DateTime? FindBestSlot(
         DateTime searchFrom,
         int durationMinutes,

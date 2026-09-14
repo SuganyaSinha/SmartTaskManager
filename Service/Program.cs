@@ -1,5 +1,4 @@
 using TaskManagerApi.Data;
-using SmartTaskManager.Interfaces;
 using SmartTaskManager.Services;
 using SmartTaskManager.Data;
 using SmartTaskManager.Repositary;
@@ -136,16 +135,16 @@ builder.Services.AddScoped<IChatSessionRepository, ChatSessionRepository>();
 
 
 // Register Services
-builder.Services.AddScoped<LegacyTaskPlannerService>(); // tdb this could be singleton
-builder.Services.AddScoped<ITaskService, TaskService>();
-builder.Services.AddScoped<IPromptService, PromptService>();
-builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-builder.Services.AddScoped<IUserRoutineService, UserRoutineService>();
+builder.Services.AddScoped<LegacyTaskPlannerService>(); 
+builder.Services.AddScoped<TaskService>();
+builder.Services.AddScoped<PromptService>();
+builder.Services.AddScoped<UserProfileService>();
+builder.Services.AddScoped<UserRoutineService>();
 builder.Services.AddScoped<LLMPlanningService>();
 builder.Services.AddScoped<TaskSchedulingService>();
 builder.Services.AddScoped<ConversationalChatService>();
 builder.Services.AddScoped<DashboardSnapshotService>();
-builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<AnalyticsService>();
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 

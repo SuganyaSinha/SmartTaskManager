@@ -9,9 +9,9 @@ namespace SmartTaskManager.Controllers
     [Authorize]
     public class AnalyticsController : BaseController
     {
-        private readonly IAnalyticsService _analyticsService;
+        private readonly AnalyticsService _analyticsService;
 
-        public AnalyticsController(IAnalyticsService analyticsService)
+        public AnalyticsController(AnalyticsService analyticsService)
         {
             _analyticsService = analyticsService;
         }

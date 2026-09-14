@@ -1,12 +1,11 @@
 using MongoDB.Driver;
 using SmartTaskManager.Models.DTO;
 using Microsoft.Extensions.Options;
-using SmartTaskManager.Interfaces;
 using SmartTaskManager.Repositary;
 
 namespace SmartTaskManager.Services
 {
-    public class UserRoutineService : IUserRoutineService
+    public class UserRoutineService
     {
         private readonly IUserRoutineRepositary _userRoutineRepositary;
 

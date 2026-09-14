@@ -1,6 +1,6 @@
 // TODO: this controller is no longer used and can be deleted.
 using Microsoft.AspNetCore.Mvc;
-using SmartTaskManager.Interfaces;
+using SmartTaskManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using SmartTaskManager.Models;
 
@@ -9,9 +9,9 @@ using SmartTaskManager.Models;
 [Authorize]
 public class PromptController : BaseController
 {
-    private readonly IPromptService _promptService;
+    private readonly PromptService _promptService;
 
-    public PromptController(IPromptService promptService)
+    public PromptController(PromptService promptService)
     {
         _promptService = promptService;
     }

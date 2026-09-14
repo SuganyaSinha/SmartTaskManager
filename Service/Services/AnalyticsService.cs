@@ -4,7 +4,7 @@ using TaskStatus = SmartTaskManager.Models.DTO.TaskStatus;
 
 namespace SmartTaskManager.Services
 {
-    public class AnalyticsService : IAnalyticsService
+    public class AnalyticsService
     {
         private readonly ITaskRepository _taskRepository;
 

@@ -3,12 +3,11 @@ using MongoDB.Driver;
 using SmartTaskManager.Models;
 using TaskManagerApi.Data;
 using Microsoft.Extensions.Options;
-using SmartTaskManager.Interfaces;
 using SmartTaskManager.Repositary;
 
 namespace SmartTaskManager.Services
 {
-    public class UserProfileService : IUserProfileService
+    public class UserProfileService
     {
         private readonly IUserProfileRepositary _userProfileRepositary;
 

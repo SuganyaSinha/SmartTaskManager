@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartTaskManager.Models.DTO;
-using SmartTaskManager.Interfaces;
+using SmartTaskManager.Services;
 using Microsoft.AspNetCore.Authorization;
 
 
@@ -11,9 +11,9 @@ namespace TaskManagerApi.Controllers
     [Authorize]
     public class UserRoutineController : BaseController
     {
-        private readonly IUserRoutineService _userRoutineService;
+        private readonly UserRoutineService _userRoutineService;
 
-        public UserRoutineController(IUserRoutineService userRoutineService)
+        public UserRoutineController(UserRoutineService userRoutineService)
         {
             _userRoutineService = userRoutineService;
         }

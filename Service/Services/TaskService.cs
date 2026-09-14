@@ -1,10 +1,9 @@
 using SmartTaskManager.Models.DTO;
-using SmartTaskManager.Interfaces;
 using SmartTaskManager.Repositary;
 
 namespace SmartTaskManager.Services
 {
-    public class TaskService : ITaskService
+    public class TaskService
     {
         private readonly ITaskRepository _taskRepositary;
 

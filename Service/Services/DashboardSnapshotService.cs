@@ -2,7 +2,6 @@ using System.Text.Json;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
-using SmartTaskManager.Interfaces;
 using SmartTaskManager.Models.DTO;
 
 namespace SmartTaskManager.Services
@@ -10,12 +9,12 @@ namespace SmartTaskManager.Services
     public class DashboardSnapshotService
     {
         private readonly Kernel _kernel;
-        private readonly ITaskService _taskService;
+        private readonly TaskService _taskService;
         private readonly ILogger<DashboardSnapshotService> _logger;
 
         public DashboardSnapshotService(
             [FromKeyedServices("chat")] Kernel kernel,
-            ITaskService taskService,
+            TaskService taskService,
             ILogger<DashboardSnapshotService> logger)
         {
             _kernel = kernel;

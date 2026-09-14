@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartTaskManager.Models.DTO;
-using SmartTaskManager.Interfaces;
+using SmartTaskManager.Services;
 using Microsoft.AspNetCore.Authorization;
 
 namespace TaskManagerApi.Controllers
@@ -10,9 +10,9 @@ namespace TaskManagerApi.Controllers
     [Authorize]
     public class TasksController : BaseController
     {
-        private readonly ITaskService _taskService;
+        private readonly TaskService _taskService;
 
-        public TasksController(ITaskService taskService)
+        public TasksController(TaskService taskService)
         {
             _taskService = taskService;
         }
