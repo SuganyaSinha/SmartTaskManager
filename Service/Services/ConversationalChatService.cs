@@ -5,6 +5,7 @@ using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 using SmartTaskManager.Models.DTO;
 using SmartTaskManager.Models.Entities;
+using SmartTaskManager.Plugins;
 using SmartTaskManager.Repositary;
 using SmartTaskManager.Services;
 

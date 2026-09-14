@@ -4,7 +4,7 @@ using Microsoft.SemanticKernel;
 using SmartTaskManager.Models.DTO;
 using SmartTaskManager.Repositary;
 
-namespace SmartTaskManager.Services
+namespace SmartTaskManager.Plugins
 {
     /// <summary>
     /// Semantic Kernel plugin exposing task management operations as LLM-callable functions.
