@@ -129,16 +129,13 @@ builder.Services.AddKeyedSingleton<Kernel>("grok-scheduler", (sp, _) =>
 // Register Repositaries
 builder.Services.AddScoped<ITaskRepository, TaskRepositary>();
 builder.Services.AddScoped<IPromptRepositary, PromptRepositary>();
-builder.Services.AddScoped<IUserProfileRepositary, UserProfileRepositary>();
 builder.Services.AddScoped<IUserRoutineRepositary, UserRoutineRepositary>();
 builder.Services.AddScoped<IChatSessionRepository, ChatSessionRepository>();
 
 
 // Register Services
-builder.Services.AddScoped<LegacyTaskPlannerService>(); 
 builder.Services.AddScoped<TaskService>();
 builder.Services.AddScoped<PromptService>();
-builder.Services.AddScoped<UserProfileService>();
 builder.Services.AddScoped<UserRoutineService>();
 builder.Services.AddScoped<LLMPlanningService>();
 builder.Services.AddScoped<TaskSchedulingService>();

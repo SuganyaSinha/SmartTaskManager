@@ -24,11 +24,6 @@ export interface ScheduledTaskWithNotes extends NewTask {
   allocationNote: string;
 }
 
-export interface UserProfile {
-  routine: string;
-  personality: string;
-}
-
 export interface TaskFilter {
   status?: TaskStatus;
   title?: string;
