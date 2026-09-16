@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace SmartTaskManager.Models.DTO
 {
     /// <summary>
-    /// Returned by OpenAI in Phase 1 (intent extraction only).
+    /// Returned by LLM in Phase 1 (intent extraction only).
     /// The AI parses the user's natural language - it does NOT make scheduling decisions.
     /// </summary>
     public class ParsedTaskRequest

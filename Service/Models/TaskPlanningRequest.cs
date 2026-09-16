@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-public class OpenAiRequestBody
+public class TaskPlanningRequest
 {
     [Required(ErrorMessage = "UserInput is required.")]
     [MaxLength(2000, ErrorMessage = "UserInput cannot exceed 2000 characters.")]

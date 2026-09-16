@@ -22,8 +22,8 @@ public class TaskPlannerController : BaseController
         _taskSchedulingService = taskSchedulingService;
     }
 
-    [HttpPost("generate")]
-    public async Task<IActionResult> GenerateTasks([FromBody] OpenAiRequestBody request)
+    [HttpPost("legacy-schedule")]
+    public async Task<IActionResult> LegacyScheduleTasks([FromBody] TaskPlanningRequest request)
     {
         if (request == null)
             return BadRequest("Request body is required.");
@@ -40,7 +40,7 @@ public class TaskPlannerController : BaseController
     }
 
     [HttpPost("schedule")]
-    public async Task<IActionResult> Schedule([FromBody] OpenAiRequestBody request)
+    public async Task<IActionResult> ScheduleTasks([FromBody] TaskPlanningRequest request)
     {
         if (request == null)
             return BadRequest("Request body is required.");

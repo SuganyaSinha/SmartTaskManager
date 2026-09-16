@@ -55,7 +55,7 @@ public class TaskSchedulingService
     }
 
     public async Task<List<ScheduledTaskResult>> ScheduleTasksAsync(
-        OpenAiRequestBody input,
+        TaskPlanningRequest input,
         string userId)
     {
         try

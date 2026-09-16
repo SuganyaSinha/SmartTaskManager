@@ -303,7 +303,7 @@ public class TaskSchedulingServiceTests
             });
     }
 
-    private static OpenAiRequestBody BuildRequest(string userInput) => new()
+    private static TaskPlanningRequest BuildRequest(string userInput) => new()
     {
         UserInput   = userInput,
         CurrentDate = CurrentDate,

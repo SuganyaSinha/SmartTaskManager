@@ -24,7 +24,7 @@ public class LLMPlanningService
         _logger = logger;
     }
 
-    public async Task<string> GenerateTaskAsync(OpenAiRequestBody input, string userId)
+    public async Task<string> GenerateTaskAsync(TaskPlanningRequest input, string userId)
     {
         try
         {

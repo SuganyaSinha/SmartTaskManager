@@ -124,14 +124,14 @@ public class ConversationalChatService
         {
             try
             {
-                var openAiRequest = new OpenAiRequestBody
+                var taskPlanningRequest = new TaskPlanningRequest
                 {
                     UserInput = request.UserMessage,
                     CurrentDate = request.CurrentDate,
                     TimeZone = request.TimeZone
                 };
 
-                var scheduledTasks = await _taskSchedulingService.ScheduleTasksAsync(openAiRequest, userId);
+                var scheduledTasks = await _taskSchedulingService.ScheduleTasksAsync(taskPlanningRequest, userId);
                 var taskWord = scheduledTasks.Count == 1 ? "task" : "tasks";
                 var message = $"I've scheduled {scheduledTasks.Count} {taskWord} for you.";
 
@@ -354,7 +354,7 @@ public class ConversationalChatService
 
                 case "tool" when msg.ToolCallId != null:
                     // Reconstruct tool-result message with the correct call linkage so that
-                    // OpenAI does not reject the history with "tool message without tool call".
+                    // LLM does not reject the history with "tool message without tool call".
                     var resultContent = new FunctionResultContent(
                         functionName: string.Empty,
                         pluginName: string.Empty,
