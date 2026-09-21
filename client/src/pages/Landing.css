@@ -159,12 +159,62 @@
   animation: hl-fade-up 0.55s 0.12s ease both;
 }
 
+/* ── Preview tabs ──────────────────────────────────────────────── */
+.hl-preview-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #eef1f6;
+}
+
+.hl-preview-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.hl-preview-tab:hover {
+  color: #334155;
+}
+
+.hl-preview-tab--active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10);
+}
+
+.hl-preview-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb 0%, #14b8a6 100%);
+  color: #ffffff;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
 .hl-preview-shell {
   display: flex;
   border-radius: 14px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
   overflow: hidden;
+  min-height: 300px;
   animation: hl-float 6s ease-in-out infinite;
   will-change: transform;
 }
@@ -180,155 +230,504 @@
   }
 }
 
-/* ── Mock sidebar ──────────────────────────────────────────────── */
-.hl-mock-sidebar {
-  width: 165px;
-  flex-shrink: 0;
-  background: #f8fafc;
-  border-right: 1px solid #e8edf3;
-  padding: 14px 11px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.hl-mock-label {
-  font-size: 9px;
-  font-weight: 700;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.hl-mock-textarea {
-  font-size: 9.5px;
-  color: #475569;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 8px;
-  line-height: 1.55;
-  min-height: 60px;
-}
-
-.hl-mock-gen-btn {
-  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-  color: #ffffff;
-  font-size: 9.5px;
-  font-weight: 600;
-  text-align: center;
-  padding: 7px 6px;
-  border-radius: 6px;
-}
-
-.hl-mock-results {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-top: 2px;
-}
-
-.hl-mock-result-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-}
-
-.hl-mock-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.hl-mock-task-name {
-  font-size: 9.5px;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.hl-mock-task-time {
-  font-size: 8.5px;
-  color: #94a3b8;
-  margin-top: 1px;
-}
-
-/* ── Mock calendar ─────────────────────────────────────────────── */
-.hl-mock-cal {
+/* ── Mock main stage ───────────────────────────────────────────── */
+.hl-mock-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: 12px 10px;
-  gap: 8px;
+  gap: 10px;
+  padding: 14px;
+  background: #f4f7fb;
 }
 
-.hl-mock-cal-header {
+.hl-mock-kicker {
+  display: block;
+  color: #2563eb;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hl-mock-label {
+  display: block;
+  color: #94a3b8;
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* AI snapshot strip */
+.hl-mock-ai-snapshot {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 70%),
+    #ffffff;
+}
+
+.hl-mock-ai-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, #2563eb 0%, #14b8a6 100%);
 }
 
-.hl-mock-cal-title {
-  font-size: 10.5px;
-  font-weight: 700;
+.hl-mock-ai-copy strong {
+  display: block;
+  margin-top: 2px;
   color: #0f172a;
-}
-
-.hl-mock-cal-tabs {
-  display: flex;
-  gap: 5px;
-  font-size: 8.5px;
-  color: #94a3b8;
-  font-weight: 500;
-}
-
-.hl-mock-cal-tab-active {
-  color: #3b82f6;
+  font-size: 10px;
   font-weight: 700;
+  line-height: 1.3;
 }
 
-.hl-mock-cal-body {
-  position: relative;
-  flex: 1;
-}
-
-.hl-mock-time-row {
-  display: flex;
+/* Completion ring + status bar */
+.hl-mock-strip {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
-  gap: 6px;
-  height: 34px;
+  padding: 10px;
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  background: #ffffff;
 }
 
-.hl-mock-time-lbl {
-  width: 28px;
-  font-size: 8.5px;
-  color: #94a3b8;
-  text-align: right;
-  flex-shrink: 0;
+.hl-mock-ring {
+  position: relative;
+  width: 54px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
 }
 
-.hl-mock-time-line {
-  flex: 1;
-  height: 1px;
+.hl-mock-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.hl-mock-ring circle {
+  fill: none;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+}
+
+.hl-mock-ring-track {
+  stroke: #e2e8f0;
+}
+
+.hl-mock-ring-progress {
+  stroke: #22c55e;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 28;
+}
+
+.hl-mock-ring span {
+  position: relative;
+  color: #0f172a;
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.hl-mock-bar {
+  height: 8px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 999px;
   background: #f1f5f9;
 }
 
-.hl-mock-event {
-  position: absolute;
-  left: 40px;
-  right: 3px;
-  border-radius: 4px;
+.hl-mock-bar span {
+  min-width: 0;
+}
+
+/* Upcoming / overdue lists */
+.hl-mock-lists {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.hl-mock-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.hl-mock-list-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border-bottom: 1px solid #dbe4ef;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #0f172a;
+}
+
+.hl-mock-list-head--blue {
+  border-left: 3px solid #2563eb;
+}
+
+.hl-mock-list-head--red {
+  border-left: 3px solid #ef4444;
+}
+
+.hl-mock-list-head em {
+  font-style: normal;
+  margin-left: auto;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.hl-mock-task-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
   font-size: 8.5px;
   font-weight: 600;
-  color: #ffffff;
-  padding: 3px 6px;
-  z-index: 1;
+  color: #334155;
+}
+
+.hl-mock-task-row i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Mock insight rail ─────────────────────────────────────────── */
+.hl-mock-rail {
+  width: 118px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 10px;
+  background: #ffffff;
+  border-left: 1px solid #e8edf3;
+}
+
+.hl-mock-focus {
+  padding: 10px;
+  border: 1px solid #dbe4ef;
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.12), #ffffff);
+}
+
+.hl-mock-focus strong {
+  display: block;
+  margin: 3px 0 1px;
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.hl-mock-focus p {
+  margin: 0;
+  color: #64748b;
+  font-size: 8px;
+}
+
+.hl-mock-todo h4 {
+  margin: 0 0 7px;
+  color: #0f172a;
+  font-size: 8.5px;
+  font-weight: 800;
+}
+
+.hl-mock-todo-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 7px 8px;
+  margin-bottom: 6px;
+  border: 1px solid #dbe4ef;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.hl-mock-todo-item span {
+  color: #94a3b8;
+  font-size: 7.5px;
+}
+
+.hl-mock-todo-item strong {
+  color: #0f172a;
+  font-size: 8.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: 0.92;
+}
+
+/* ── Mock Task Agent (chat) ───────────────────────────────────── */
+.hl-mock-agent-sidebar {
+  width: 118px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 9px;
+  background: #f1f5f9;
+  border-right: 1px solid #e2e8f0;
+}
+
+.hl-mock-agent-new-chat {
+  text-align: center;
+  padding: 7px 0;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.hl-mock-agent-session {
+  padding: 7px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  color: #475569;
+  font-size: 8.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hl-mock-agent-session--active {
+  background: #dbeafe;
+  border-left: 2px solid #3b82f6;
+  color: #1d4ed8;
+}
+
+.hl-mock-agent-chat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f8fafc;
+}
+
+.hl-mock-agent-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.hl-mock-agent-header span:first-child {
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.hl-mock-agent-hint {
+  color: #94a3b8;
+  font-size: 7.5px;
+}
+
+.hl-mock-agent-messages {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 12px;
+  overflow: hidden;
+}
+
+.hl-mock-agent-bubble {
+  max-width: 80%;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.hl-mock-agent-bubble--user {
+  align-self: flex-end;
+  background: #3b82f6;
+  color: #ffffff;
+  border-bottom-right-radius: 3px;
+}
+
+.hl-mock-agent-bubble--assistant {
+  align-self: flex-start;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  border-bottom-left-radius: 3px;
+}
+
+.hl-mock-agent-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.hl-mock-agent-input span:first-child {
+  color: #94a3b8;
+  font-size: 8px;
+}
+
+.hl-mock-agent-send {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+/* ── Mock Calendar ─────────────────────────────────────────────── */
+.hl-mock-cal2 {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  gap: 10px;
+  background: #ffffff;
+}
+
+.hl-mock-cal2-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hl-mock-cal2-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.hl-mock-cal2-today {
+  padding: 3px 8px;
+  border: 1px solid #dbe4ef;
+  border-radius: 6px;
+  color: #334155;
+  font-size: 8px;
+}
+
+.hl-mock-cal2-title {
+  color: #0f172a;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.hl-mock-cal2-views {
+  display: flex;
+  gap: 4px;
+  font-size: 8px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.hl-mock-cal2-views span {
+  padding: 3px 7px;
+  border-radius: 5px;
+}
+
+.hl-mock-cal2-view--active {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.hl-mock-cal2-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 2px;
+  border: 1px solid #e8edf3;
+  border-radius: 8px;
+  padding: 4px;
+  background: #e8edf3;
+}
+
+.hl-mock-cal2-weekday {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 0;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 7.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.hl-mock-cal2-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 30px;
+  padding: 3px 4px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.hl-mock-cal2-cell--blank {
+  background: #fafbfc;
+}
+
+.hl-mock-cal2-daynum {
+  color: #64748b;
+  font-size: 7.5px;
+  font-weight: 700;
+}
+
+.hl-mock-cal2-event {
+  border-radius: 3px;
+  padding: 1.5px 4px;
+  color: #ffffff;
+  font-size: 6.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Features ──────────────────────────────────────────────────── */

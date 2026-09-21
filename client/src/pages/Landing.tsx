@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import "./Landing.css";
 
@@ -37,13 +38,57 @@ const FEATURES = [
   },
 ];
 
-const MOCK_EVENTS = [
-  { top: 4,   height: 26, color: "#3b82f6", label: "Team Standup" },
-  { top: 106, height: 26, color: "#22c55e", label: "Lunch Break" },
-  { top: 174, height: 56, color: "#6366f1", label: "Code Review" },
+const MOCK_STATUS_SEGMENTS = [
+  { label: "Not Started", color: "#f59e0b", width: 25 },
+  { label: "In Progress", color: "#3b82f6", width: 30 },
+  { label: "Completed", color: "#22c55e", width: 35 },
+  { label: "Blocked", color: "#ef4444", width: 10 },
 ];
 
+const MOCK_UPCOMING = [
+  { color: "#3b82f6", title: "Team Standup" },
+  { color: "#6366f1", title: "Code Review" },
+];
+
+const MOCK_OVERDUE = [{ color: "#ef4444", title: "Submit Report" }];
+
+const MOCK_TODAY = [
+  { time: "9:00 am", title: "Team Standup" },
+  { time: "2:00 pm", title: "Code Review" },
+];
+
+const MOCK_AGENT_SESSIONS = [
+  { title: "Weekly Planning", active: true },
+  { title: "Reschedule Requests", active: false },
+  { title: "Task Cleanup", active: false },
+];
+
+const MOCK_AGENT_MESSAGES: { role: "user" | "assistant"; content: string }[] = [
+  { role: "user", content: "Schedule yoga on Wednesday at 5pm" },
+  { role: "assistant", content: "Done! I've added Yoga for Wed, 5:00–6:00 pm." },
+  { role: "user", content: "Show me all tasks this week" },
+  { role: "assistant", content: "Found 3 tasks this week — want me to reschedule any?" },
+];
+
+const MOCK_CAL_WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+const MOCK_CAL_EVENTS: Record<number, { label: string; color: string }[]> = {
+  3: [{ label: "Standup", color: "#3b82f6" }],
+  9: [{ label: "Sprint Planning", color: "#f59e0b" }],
+  12: [{ label: "Design Review", color: "#22c55e" }],
+  17: [{ label: "Code Review", color: "#3b82f6" }, { label: "1:1 Sync", color: "#22c55e" }],
+  24: [{ label: "Deadline", color: "#ef4444" }],
+};
+
+const MOCK_CAL_LEAD_BLANKS = 3;
+const MOCK_CAL_DAYS_IN_MONTH = 30;
+const MOCK_CAL_CELLS = Array.from({ length: 35 }, (_, i) => {
+  const day = i - MOCK_CAL_LEAD_BLANKS + 1;
+  return day >= 1 && day <= MOCK_CAL_DAYS_IN_MONTH ? day : null;
+});
+
 export default function HomeLanding() {
+  const [activePreview, setActivePreview] = useState<"dashboard" | "agent" | "calendar">("dashboard");
   const { loginWithRedirect } = useAuth0();
 
   const handleSignUp = () =>
@@ -69,7 +114,7 @@ export default function HomeLanding() {
           </h1>
 
           <p className="hl-subhead">
-            Describe your week in plain English or by voice —
+            Describe your tasks in plain English or by voice —
             SmartTask automatically builds your calendar and keeps you on track.
           </p>
 
@@ -87,62 +132,185 @@ export default function HomeLanding() {
           </div>
         </div>
 
-        {/* ── App preview mockup ── */}
-        <div className="hl-preview" aria-hidden="true">
-          <div className="hl-preview-shell">
-            {/* Sidebar */}
-            <div className="hl-mock-sidebar">
-              <div className="hl-mock-label">Describe your tasks</div>
-              <div className="hl-mock-textarea">
-                Schedule team standup tomorrow at 9am and a code review Friday at 2pm…
-              </div>
-              <div className="hl-mock-gen-btn">Generate Schedule</div>
-              <div className="hl-mock-results">
-                <div className="hl-mock-result-item">
-                  <span className="hl-mock-dot" style={{ background: "#3b82f6" }} />
-                  <div>
-                    <div className="hl-mock-task-name">Team Standup</div>
-                    <div className="hl-mock-task-time">Tomorrow, 9:00–9:30 am</div>
-                  </div>
-                </div>
-                <div className="hl-mock-result-item">
-                  <span className="hl-mock-dot" style={{ background: "#6366f1" }} />
-                  <div>
-                    <div className="hl-mock-task-name">Code Review</div>
-                    <div className="hl-mock-task-time">Friday, 2:00–3:30 pm</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* ── App preview mockup (mirrors the live app) ── */}
+        <div className="hl-preview">
+          <div className="hl-preview-tabs" role="tablist" aria-label="App preview">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activePreview === "dashboard"}
+              className={`hl-preview-tab${activePreview === "dashboard" ? " hl-preview-tab--active" : ""}`}
+              onClick={() => setActivePreview("dashboard")}
+            >
+              Dashboard
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activePreview === "agent"}
+              className={`hl-preview-tab${activePreview === "agent" ? " hl-preview-tab--active" : ""}`}
+              onClick={() => setActivePreview("agent")}
+            >
+              Task Agent
+              <span className="hl-preview-tab-badge">AI</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activePreview === "calendar"}
+              className={`hl-preview-tab${activePreview === "calendar" ? " hl-preview-tab--active" : ""}`}
+              onClick={() => setActivePreview("calendar")}
+            >
+              Calendar
+            </button>
+          </div>
 
-            {/* Calendar */}
-            <div className="hl-mock-cal">
-              <div className="hl-mock-cal-header">
-                <span className="hl-mock-cal-title">March 2026</span>
-                <div className="hl-mock-cal-tabs">
-                  <span>Month</span>
-                  <span className="hl-mock-cal-tab-active">Week</span>
-                  <span>Day</span>
+          <div className="hl-preview-shell" aria-hidden="true">
+            {activePreview === "dashboard" ? (
+              <>
+                {/* Main stage */}
+                <div className="hl-mock-main">
+                  <div className="hl-mock-ai-snapshot">
+                    <div className="hl-mock-ai-mark">AI</div>
+                    <div className="hl-mock-ai-copy">
+                      <span className="hl-mock-kicker">AI Snapshot</span>
+                      <strong>3 tasks need attention before 5pm</strong>
+                    </div>
+                  </div>
+
+                  <div className="hl-mock-strip">
+                    <div className="hl-mock-ring">
+                      <svg viewBox="0 0 36 36">
+                        <circle className="hl-mock-ring-track" cx="18" cy="18" r="15.5" pathLength="100" />
+                        <circle className="hl-mock-ring-progress" cx="18" cy="18" r="15.5" pathLength="100" />
+                      </svg>
+                      <span>72%</span>
+                    </div>
+                    <div className="hl-mock-bar-col">
+                      <span className="hl-mock-label">Task Distribution</span>
+                      <div className="hl-mock-bar">
+                        {MOCK_STATUS_SEGMENTS.map(({ label, color, width }) => (
+                          <span key={label} style={{ width: `${width}%`, background: color }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="hl-mock-lists">
+                    <div className="hl-mock-list">
+                      <div className="hl-mock-list-head hl-mock-list-head--blue">
+                        Upcoming <em>{MOCK_UPCOMING.length}</em>
+                      </div>
+                      {MOCK_UPCOMING.map(({ color, title }) => (
+                        <div key={title} className="hl-mock-task-row">
+                          <i style={{ background: color }} />
+                          <span>{title}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="hl-mock-list">
+                      <div className="hl-mock-list-head hl-mock-list-head--red">
+                        Overdue <em>{MOCK_OVERDUE.length}</em>
+                      </div>
+                      {MOCK_OVERDUE.map(({ color, title }) => (
+                        <div key={title} className="hl-mock-task-row">
+                          <i style={{ background: color }} />
+                          <span>{title}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Insight rail */}
+                <div className="hl-mock-rail">
+                  <div className="hl-mock-focus">
+                    <span className="hl-mock-kicker">Today</span>
+                    <strong>{MOCK_TODAY.length}</strong>
+                    <p>tasks scheduled</p>
+                  </div>
+                  <div className="hl-mock-todo">
+                    <h4>To Do Today</h4>
+                    {MOCK_TODAY.map(({ time, title }) => (
+                      <div key={title} className="hl-mock-todo-item">
+                        <span>{time}</span>
+                        <strong>{title}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : activePreview === "agent" ? (
+              <>
+                {/* Session sidebar */}
+                <div className="hl-mock-agent-sidebar">
+                  <div className="hl-mock-agent-new-chat">+ New Chat</div>
+                  {MOCK_AGENT_SESSIONS.map(({ title, active }) => (
+                    <div
+                      key={title}
+                      className={`hl-mock-agent-session${active ? " hl-mock-agent-session--active" : ""}`}
+                    >
+                      {title}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Chat panel */}
+                <div className="hl-mock-agent-chat">
+                  <div className="hl-mock-agent-header">
+                    <span>Task Assistant</span>
+                    <span className="hl-mock-agent-hint">Ask me to move, update, query, or create tasks</span>
+                  </div>
+                  <div className="hl-mock-agent-messages">
+                    {MOCK_AGENT_MESSAGES.map(({ role, content }, i) => (
+                      <div key={i} className={`hl-mock-agent-bubble hl-mock-agent-bubble--${role}`}>
+                        {content}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="hl-mock-agent-input">
+                    <span>Ask me anything about your tasks...</span>
+                    <span className="hl-mock-agent-send">Send</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="hl-mock-cal2">
+                <div className="hl-mock-cal2-toolbar">
+                  <div className="hl-mock-cal2-nav">
+                    <span>‹</span>
+                    <span>›</span>
+                    <span className="hl-mock-cal2-today">Today</span>
+                  </div>
+                  <div className="hl-mock-cal2-title">March 2026</div>
+                  <div className="hl-mock-cal2-views">
+                    <span className="hl-mock-cal2-view--active">Month</span>
+                    <span>Week</span>
+                    <span>Day</span>
+                  </div>
+                </div>
+
+                <div className="hl-mock-cal2-grid">
+                  {MOCK_CAL_WEEKDAYS.map((d) => (
+                    <div key={d} className="hl-mock-cal2-weekday">{d}</div>
+                  ))}
+                  {MOCK_CAL_CELLS.map((day, i) => (
+                    <div key={i} className={`hl-mock-cal2-cell${day === null ? " hl-mock-cal2-cell--blank" : ""}`}>
+                      {day !== null && (
+                        <>
+                          <span className="hl-mock-cal2-daynum">{day}</span>
+                          {(MOCK_CAL_EVENTS[day] ?? []).slice(0, 2).map(({ label, color }) => (
+                            <span key={label} className="hl-mock-cal2-event" style={{ background: color }}>
+                              {label}
+                            </span>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="hl-mock-cal-body">
-                {["9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm"].map((t) => (
-                  <div key={t} className="hl-mock-time-row">
-                    <span className="hl-mock-time-lbl">{t}</span>
-                    <div className="hl-mock-time-line" />
-                  </div>
-                ))}
-                {MOCK_EVENTS.map(({ top, height, color, label }) => (
-                  <div
-                    key={label}
-                    className="hl-mock-event"
-                    style={{ top, height, background: color }}
-                  >
-                    {label}
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
